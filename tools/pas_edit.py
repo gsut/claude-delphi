@@ -87,6 +87,10 @@ def main():
                 where = ", ".join("%s (line %d)" % (r.path(), r.line) for r in found) or "none"
                 refuse("edit %d: routine '%s' matches %d routines: %s" % (n, ed["routine"], len(found), where))
             lo, hi = found[0].start, found[0].end
+            # the routine ends at the ';' of its final "end;" -- include the line break, so a whole-line anchor
+            # that ends with that "end;" still falls inside the routine
+            if text.startswith(nl, hi):
+                hi += len(nl)
         # an anchor written as whole lines (ending with a line break) matches only at the start of a line, so that
         # "  X;\n" does not match inside "    X;\n" of a deeper block and split that line
         whole_lines = old.endswith(nl)

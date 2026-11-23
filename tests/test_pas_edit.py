@@ -52,6 +52,12 @@ class PasEditTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout)
         self.assertIn("    Result := False; // Ölçüm\r\n".encode("cp1254"), self.after())
 
+    def test_anchor_ending_with_the_routines_final_end(self):
+        old = ANCHOR + "end;\n"
+        r = self.edit([{"old": old, "new": ANCHOR + "  // x\nend;\n", "routine": "TForm1.Second"}], additions_only=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("  Result := False; // Ölçüm\r\n  // x\r\nend;\r\n".encode("cp1254"), self.after())
+
     def test_nested_routine_path(self):
         r = self.edit([{"old": "  Result := N * 2;\n", "new": "  Result := N * 3;\n", "routine": "TForm1.First > Inner"}])
         self.assertEqual(r.returncode, 0, r.stdout)
