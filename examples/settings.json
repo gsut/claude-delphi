@@ -1,0 +1,61 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git mv *)",
+      "Bash(git reset *)",
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git restore *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+      "Bash(git rebase *)",
+      "Bash(git cherry-pick *)",
+      "Bash(git revert *)",
+      "Bash(git tag *)",
+      "Bash(git branch *)",
+      "Bash(git clean *)",
+      "Bash(git config *)",
+      "Bash(git worktree *)",
+      "Bash(git apply *)",
+      "Bash(git am *)",
+      "Bash(git notes *)",
+      "Bash(git update-ref *)",
+      "Bash(git gc *)",
+      "Bash(git -C *)",
+      "Bash(git -c *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -I \"$CLAUDE_PROJECT_DIR/.claude/hooks/command_guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -I \"$CLAUDE_PROJECT_DIR/.claude/hooks/pascal_check.py\"",
+            "timeout": 30,
+            "statusMessage": "Pascal file check"
+          }
+        ]
+      }
+    ]
+  }
+}
