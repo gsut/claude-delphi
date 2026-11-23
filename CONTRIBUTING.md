@@ -17,7 +17,7 @@ useful for more Delphi projects are welcome.
 - Skills, agents and hook messages stay in **English only**: Claude follows English instructions in any language, and
   translated copies of instructions drift apart. Localization is done through `claude-delphi.json` and one line in
   `CLAUDE.md` (see *Localization* in the README).
-- **Standard library only** for Python code; Python 3.9+.
+- **Standard library only** for Python code; Python 3.11+.
 - Every change to a hook, a tool or `build/summary.py` comes with a test in `tests/`. Run the suite before opening a pull
   request:
 

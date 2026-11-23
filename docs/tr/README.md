@@ -1,5 +1,8 @@
 # claude-delphi
 
+[![tests](https://github.com/gsut/claude-delphi/actions/workflows/tests.yml/badge.svg)](https://github.com/gsut/claude-delphi/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
+
 > Bu belge [`README.md`](../../README.md)'nin Türkçe çevirisidir; çelişkide İngilizce sürüm esastır.
 
 Eski bir **Delphi VCL + veritabanı** kod tabanında [Claude Code](https://claude.com/claude-code) ile güvenli çalışmak için
@@ -66,7 +69,7 @@ Pip paketi yok: her şey Python'un standart kütüphanesiyle çalışır.
 
 | Gereksinim | Kim kullanıyor | Not |
 |---|---|---|
-| **Python 3.9+**, `python` adıyla yolda | hook'lar, araçlar, `summary.py`, testler | Yerelde 3.13'te denendi; CI 3.9 ve 3.13 için ayarlı. `settings.json` `python -I …` çağırır; Linux / macOS'ta komut `python3` ise orada değiştirin. |
+| **Python 3.11+**, `python` adıyla yolda | hook'lar, araçlar, `summary.py`, testler | CI, Windows ve Ubuntu'da 3.11 ve 3.13 ile çalışır; daha eski 3.x sürümleri çalışabilir ama denenmedi. `settings.json` `python -I …` çağırır; Linux / macOS'ta komut `python3` ise orada değiştirin. |
 | **Git**, yolda | `pascal_check.py` (yeni ihlali eskisinden ayırır), testler | Proje bir Git deposu olmalı. |
 | **Claude Code**, skill ve alt ajan destekleyen bir sürüm | hook'lar, `.claude/skills/`, `.claude/agents/` | `/multi-review` iki alt ajanı paralel başlatır. |
 | **Delphi 2007 ve sonrası** (`.dproj`, `msbuild`, `rsvars.bat`) | yalnız `build/` | Lisans komut satırı derleyicisini kapsamalı; Community Edition doğrulanmadı. |

@@ -1,5 +1,8 @@
 # claude-delphi
 
+[![tests](https://github.com/gsut/claude-delphi/actions/workflows/tests.yml/badge.svg)](https://github.com/gsut/claude-delphi/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Hooks, skills, agents, small tools and a working method for using [Claude Code](https://claude.com/claude-code) safely on a
 legacy **Delphi VCL + database** code base.
 
@@ -69,7 +72,7 @@ No pip packages: everything uses the Python standard library.
 
 | Requirement | Needed by | Notes |
 |---|---|---|
-| **Python 3.9+**, on the path as `python` | hooks, tools, `summary.py`, tests | Tested locally on 3.13; CI is set up for 3.9 and 3.13. `settings.json` calls `python -I …`; if the command is `python3` on Linux / macOS, change it there. |
+| **Python 3.11+**, on the path as `python` | hooks, tools, `summary.py`, tests | CI runs 3.11 and 3.13 on Windows and Ubuntu; older 3.x versions may work but are not tested. `settings.json` calls `python -I …`; if the command is `python3` on Linux / macOS, change it there. |
 | **Git**, on the path | `pascal_check.py` (tells new violations from old ones), tests | The project must be a Git repository. |
 | **Claude Code**, a version with skills and sub-agents | hooks, `.claude/skills/`, `.claude/agents/` | `/multi-review` starts two sub-agents in parallel. |
 | **Delphi 2007 or later** (`.dproj`, `msbuild`, `rsvars.bat`) | `build/` only | The licence must include the command-line compiler; Community Edition not verified. |
