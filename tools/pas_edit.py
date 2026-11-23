@@ -101,8 +101,9 @@ def main():
         k = hits[0]
         text = text[:k] + new + text[k + len(old):]
 
-    if is_dfm and any(ord(c) > 127 for c in text):
-        refuse("DFM files must stay ASCII; write non-ASCII characters as #nnn escapes")
+    # only the inserted text is checked: some IDE-saved DFMs (UTF-8 with BOM) already contain non-ASCII characters
+    if is_dfm and any(ord(c) > 127 for ed in spec["edits"] for c in ed["new"]):
+        refuse("new DFM text must be ASCII; write non-ASCII characters as #nnn escapes")
     try:
         out = text.encode(enc)
     except UnicodeEncodeError as e:

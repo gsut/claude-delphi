@@ -96,6 +96,24 @@ class PasEditTest(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("ASCII", r.stdout)
 
+    def test_dfm_with_existing_utf8_can_get_ascii_additions(self):
+        # IDE-saved DFMs can be UTF-8 with BOM and already contain non-ASCII text; adding ASCII must still work
+        dfm = os.path.join(self.project.dir, "Data.dfm")
+        body = "object Dm: TDataModule\r\n  object Q: TQuery\r\n    SQL.Strings = ('-- Ölçüm')\r\n  end\r\nend\r\n"
+        with open(dfm, "wb") as f:
+            f.write(b"\xef\xbb\xbf" + body.encode("utf-8"))
+        spec = os.path.join(self.project.dir, "dfm2.json")
+        with open(spec, "w", encoding="utf-8") as f:
+            json.dump({"file": dfm, "edits": [{"old": "  end\nend\n",
+                                                "new": "  end\n  object Q2: TQuery\n  end\nend\n"}]}, f)
+        r = run_tool(PAS_EDIT, [spec], self.project)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        with open(dfm, "rb") as f:
+            data = f.read()
+        self.assertTrue(data.startswith(b"\xef\xbb\xbf"))
+        self.assertIn("-- Ölçüm".encode("utf-8"), data)
+        self.assertIn(b"  object Q2: TQuery\r\n", data)
+
 
 if __name__ == "__main__":
     unittest.main()
