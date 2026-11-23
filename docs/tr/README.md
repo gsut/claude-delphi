@@ -99,7 +99,8 @@ python -m unittest discover -s tests -v
 Yalnız standart kütüphane (pytest gerekmez); `git` yolda olmalı. Testler Pascal örneklerini çalışma anında üretir, kod sayfası
 ve CRLF denetimi Git'in depoyu nasıl çıkardığına bağlı kalmaz. CI, Windows ve Ubuntu'da çalıştırır (`.github/workflows/tests.yml`).
 
-Yöntemin iş başında nasıl göründüğü için: [vaka](vaka.md).
+Yöntemin iş başında nasıl göründüğü için: [vaka](vaka.md) — ya da hikâyeyi Medium'da okuyun:
+[Boş İkiz Satırlar: Eski Bir Delphi Projesinde Claude Code ile Çalışmak](https://medium.com/@gokhan.sut_29411/bo%C5%9F-i%CC%87kiz-sat%C4%B1rlar-eski-bir-delphi-projesinde-claude-code-ile-%C3%A7al%C4%B1%C5%9Fmak-09940981f2dc).
 
 ## Yerelleştirme
 

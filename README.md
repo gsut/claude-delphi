@@ -138,7 +138,8 @@ Whatever the database, give Claude a **read-only user** and list the users with 
 
 ## The method in short
 
-To see it at work on a real bug, read the [case study](docs/case-study.md).
+To see it at work on a real bug, read the [case study](docs/case-study.md) — or the story on Medium:
+[The Empty Twin Rows: Using Claude Code on a Legacy Delphi Code Base](https://medium.com/@gokhan.sut_29411/the-empty-twin-rows-using-claude-code-on-a-legacy-delphi-code-base-9d0f7fbd723a).
 
 - **Hypothesis first, then approval, then the fix.** The AI says "the cause is X, my evidence is Y, this measurement tells
   them apart" and stops.
