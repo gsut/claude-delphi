@@ -42,7 +42,8 @@ build/
   build.bat, summary.py    command-line build + diff against the warning baseline
 tools/
   pas_edit.py              safe replacement in Pascal / DFM files: keeps code page + CRLF, anchor must occur exactly once,
-                           optionally only inside a named routine, optional "additions only" check
+                           optionally only inside a named routine, optional "additions only" check; --reverse undoes
+                           an applied spec (e.g. removes temporary measurement lines)
   pas_callers.py           every reference to a routine: code (with enclosing routine), other {$IF} branches, DFM
                            bindings, name strings, comments; a dead-code verdict with evidence
   pascal_lex.py            small Pascal lexer / routine finder used by the tools (nested routines, {$IF} branches)

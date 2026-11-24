@@ -2,7 +2,9 @@
 
 The hooks forbid sed -i and shell redirection on Pascal files; this is the tool to use instead.
 
-Usage:   python pas_edit.py <edits.json> [--dry-run]
+Usage:   python pas_edit.py <edits.json> [--dry-run] [--reverse]
+         --reverse undoes a spec that was applied: every "new" becomes the anchor and is replaced by its "old", last edit
+         first (additions_only is ignored). Handy for removing temporary measurement lines with the spec that added them.
 edits.json:
   {
     "file": "Source/Main.pas",
@@ -54,8 +56,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("spec")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--reverse", action="store_true")
     a = ap.parse_args()
     spec = json.load(open(a.spec, encoding="utf-8"))
+    if a.reverse:
+        spec["edits"] = [dict(ed, old=ed["new"], new=ed["old"]) for ed in reversed(spec["edits"])]
+        spec.pop("additions_only", None)
     path = spec["file"]
     is_dfm = path.lower().endswith(".dfm")
     enc = spec.get("encoding") or project_encoding()

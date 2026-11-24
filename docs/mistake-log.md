@@ -37,7 +37,9 @@ project. When you take them into your own log, make them concrete with your proj
 **[1] Measure first, then fix; show the experiment that tells the hypotheses apart.** A consistent story built from code
 and "the numbers add up" are not evidence. Read the symptom word for word ("cannot be selected" ≠ "is not visible").
 *Check:* if the diagnosis rests on code, propose a measurement line or a single-variable experiment before fixing; the
-experiment must not change the measured variable as a side effect, and the measured path must be the path the user takes.
+experiment must not change the measured variable as a side effect, and the measured path must be the path the user takes
+(a command written into a document is tried exactly as written there — redirection and pipe included — and its output is
+fed to the next step; on Windows, Python writes redirected output in the console code page, not UTF-8).
 After a sentence like "it is slow because of X", if the question "how did I tell this apart?" has no counter or experiment
 as its answer, add that measurement first.
 
@@ -131,6 +133,9 @@ filled") is also enforced in code (`LIMIT 1`, a constraint, a condition).
   (to the state it was found in, not to its default).
 - `Edit` on an empty dataset calls `Insert` (`Data.DB` `TDataSet.Edit`); code that "only edits" can add a row.
 - Before adding a lock (`BeginUpdate`, `DisableControls`), search the component source for the conditions it is used under.
+- A cell lock given in a grid's `OnGetCellParams` (`Params.ReadOnly`) must also be given when `EditMode = True`: EhLib asks
+  for edit permission exactly that way (`TAxisBarEh.CanModify`). `if EditMode then Exit` is only for colour and text. Add
+  "double-click a locked cell and try to type" to the test steps.
 
 **[17] Two traps the compiler catches.** Delphi `{ }` comments do not nest (a comment containing `{` uses `//`); an
 anonymous method cannot capture a nested routine, a `var` / `out` parameter or `Result` (E2555).

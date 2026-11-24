@@ -35,6 +35,16 @@ class PasEditTest(unittest.TestCase):
         self.assertIn("occurs 2 times", r.stdout)
         self.assertEqual(self.after(), self.before)
 
+    def test_reverse_restores_the_file(self):
+        edits = [{"old": ANCHOR, "new": "  // Ölçüm başı\n" + ANCHOR, "routine": "TForm1.First"},
+                 {"old": ANCHOR, "new": ANCHOR + "  // Ölçüm sonu\n", "routine": "TForm1.Second"}]
+        r = self.edit(edits, additions_only=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertNotEqual(self.after(), self.before)
+        r = self.edit(edits, "--reverse", additions_only=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertEqual(self.after(), self.before)
+
     def test_routine_scope_and_encoding_kept(self):
         r = self.edit([{"old": ANCHOR, "new": "  // Değişti. AB - 2026-01-31\n" + ANCHOR, "routine": "TForm1.Second"}],
                       additions_only=True)

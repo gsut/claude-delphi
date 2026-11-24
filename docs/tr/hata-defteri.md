@@ -40,7 +40,9 @@ Kendi defterinize alırken projenizin adlarıyla somutlaştırın.
 **[1] Önce ölç, sonra düzelt; hipotezi ayırt edecek deneyi göster.** Koddan kurulan tutarlı bir hikâye ve "sayılar
 tutuyor" hesabı kanıt değildir. Belirti kelimesi kelimesine okunur ("seçilemiyor" ≠ "görünmüyor").
 *Kontrol:* teşhis koda dayanıyorsa düzeltmeden önce bir ölçüm satırı ya da tek değişkenli deneme önerilir; deneme ölçülen
-değişkeni yan etkiyle değiştirmemeli, ölçülen yol kullanıcının kullandığı yol olmalı. "X yüzünden yavaş" cümlesinden sonra
+değişkeni yan etkiyle değiştirmemeli, ölçülen yol kullanıcının kullandığı yol olmalı (belgeye yazılan komut, belgedeki
+biçimiyle — yönlendirme ve boru dahil — denenir ve çıktısı bir sonraki adıma verilir; Windows'ta Python yönlendirilen çıktıyı
+UTF-8 değil konsol kod sayfasıyla yazar). "X yüzünden yavaş" cümlesinden sonra
 "bunu neyle ayırt ettim?" sorusuna sayaç ya da deney adıyla cevap yoksa önce o ölçüm konur.
 
 **[2] Saklı bir değeri yorumlamadan önce onu kimin, ne zaman yazdığını doğrula.**
@@ -133,6 +135,9 @@ garantiye alınır (`LIMIT 1`, kısıt, koşul).
 - Boş bir veri kümesinde `Edit` çağrısı `Insert` yapar (`Data.DB` `TDataSet.Edit`); "yalnız düzenliyorum" sanılan kod satır
   ekleyebilir.
 - Kilit (`BeginUpdate`, `DisableControls`) eklemeden önce bileşen kaynağında hangi koşullarda kullanıldığı aranır.
+- Izgaranın `OnGetCellParams`'ında verilen hücre kilidi (`Params.ReadOnly`) `EditMode = True` çağrısında da verilir: EhLib
+  düzenleme iznini tam öyle soruyor (`TAxisBarEh.CanModify`). `if EditMode then Exit` yalnız renk ve metin için. Test
+  adımına "kilitli hücreye çift tıkla, yazmayı dene" girer.
 
 **[17] Derlemenin yakaladığı iki tuzak.** Delphi yorumunda `{ }` iç içe olmaz (içinde `{` geçen yorum `//` ile); anonim
 metot iç içe yordamı, `var` / `out` parametreyi ve `Result`'ı yakalayamaz (E2555).

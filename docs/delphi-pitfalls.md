@@ -181,3 +181,27 @@ column is read both ways in two places, the two places decide differently.
 
 Read a settings column by what the code that fills it does, not by its name. Before saying "this flag is never True", read
 every assignment line; one missed line turns a "dead" verdict wrong.
+
+## 23. A dataset without a master link + `Refresh` in a loop = the whole table, again and again
+
+A `TUniTable` / `TFDTable` that filters its records on the client (`OnFilterRecord`, a `Locate` by tenant) still fetches
+**every tenant's rows** from the server. `Refresh` inside a row loop fetches the whole table once per row: in a real case
+15 rows took 10.5 s (108 k rows, 104 MB) and 0.2 s after the dataset was linked to the tenant master
+(`MasterSource` / `MasterFields`). Do not simply delete the `Refresh`: check first whether it makes the dataset see a value
+that SQL wrote in between (a "delete later" mark that the loop clears row by row) — without it the stale value can delete
+valid rows.
+
+## 24. Selecting tree nodes one by one to reach a target fires the change event every time
+
+A routine that walks a `TTreeView` by setting `Selected := Selected.GetNext` until it finds a node runs `OnChange` for
+every node on the way — often a query and a recalculation each. Find the node from its data (`Node.Data`) and select only
+that one; keep the old loop as a fallback if the check after the selection does not hold.
+
+## 25. Over a network, count server round trips, not server time
+
+A screen that takes 2.5 s locally may take 10 s over a network, and the server's own time says nothing about it
+(186 ms in a real case). The number that matters is the number of statements per user action:
+`pg_stat_statements_reset()` → do the action once → `select calls, query from pg_stat_statements order by calls desc`.
+Look for statements with hundreds of calls — and for queries whose result is never used: in the real case 100 of 339 were
+a per-group `SUM` whose result was opened and closed without being read. Each new SQL text also costs the data-access
+layer a metadata query (UniDAC field info), so the waste doubles.

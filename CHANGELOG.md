@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.2.0 — 24.11.2026
+
+**Tools**
+- `pas_edit.py --reverse` (new): undoes a spec that was applied — each `new` is replaced by its `old`, last edit first;
+  `additions_only` is ignored. Removes temporary measurement lines with the same spec that added them.
+  Test `test_reverse_restores_the_file`.
+- `pas_edit.py` (fix): in DFM files only the **inserted** text must be ASCII. IDE-saved DFMs in UTF-8 with BOM already contain
+  non-ASCII characters, and the whole-file check refused every edit to them.
+- `pas_edit.py` (fix): a `routine`-scoped anchor that ends with the routine's final `end;` and its line break is now found;
+  the routine range used to stop at the `;`.
+
+**Docs** (English and Turkish)
+- Mistake log [1]: a command written into a document is tried exactly as written there (redirection and pipe included);
+  on Windows, Python writes redirected output in the console code page, not UTF-8.
+- Mistake log [16]: a cell lock given in a grid's `OnGetCellParams` (`Params.ReadOnly`) must also be given when
+  `EditMode = True` — EhLib asks for edit permission that way (`TAxisBarEh.CanModify`).
+- Pitfalls 23–25: a dataset without a master link refreshed inside a loop fetches the whole table each time; walking tree
+  nodes by selection fires the change event for every node; over a network, count server round trips
+  (`pg_stat_statements`), not server time.
+
 ## v0.1.0 — first public release
 
 Collected from months of daily use of Claude Code on a legacy Delphi VCL + PostgreSQL project, with everything

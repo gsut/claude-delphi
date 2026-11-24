@@ -179,3 +179,25 @@ okunursa iki yer farklı karar verir.
 
 Bir ayar kolonunu anlamına göre değil, onu dolduran kodun yaptığına göre okuyun. "Bu bayrak hiç True olmuyor" demeden önce
 bütün atama satırlarını okuyun; tek bir kaçan satır "ölü" hükmünü yanlış yapar.
+
+## 23. Ana tablo bağı olmayan küme + döngüde `Refresh` = bütün tablo, tekrar tekrar
+
+Kayıtlarını istemcide süzen (`OnFilterRecord`, kiracıya göre `Locate`) bir `TUniTable` / `TFDTable` sunucudan yine **bütün
+kiracıların satırlarını** çeker. Satır döngüsündeki `Refresh` her satırda bütün tabloyu yeniden çeker: gerçek bir vakada
+15 satır 10,5 sn sürdü (108 bin satır, 104 MB); küme kiracı ana tablosuna bağlanınca (`MasterSource` / `MasterFields`)
+0,2 sn. `Refresh`'i doğrudan silmeyin: önce, aradaki bir SQL'in yazdığı değeri kümenin görmesini sağlayıp sağlamadığına
+bakın (döngünün satır satır temizlediği bir "sonra sil" işareti gibi); onsuz eski değer geçerli satırları sildirebilir.
+
+## 24. Hedefe ağaç düğümlerini tek tek seçerek gitmek, değişim olayını her seferinde çalıştırır
+
+Bir düğümü bulana kadar `TTreeView`'da `Selected := Selected.GetNext` ile ilerleyen yordam, yoldaki her düğüm için
+`OnChange`'i çalıştırır — çoğu zaman her biri bir sorgu ve bir yeniden hesap. Düğümü verisinden (`Node.Data`) bulup yalnız
+onu seçin; seçimden sonraki denetim tutmazsa eski döngü yedek olarak kalsın.
+
+## 25. Ağda sunucu süresine değil, sunucuya gidiş sayısına bakın
+
+Yerelde 2,5 sn süren bir ekran ağda 10 sn sürebilir ve sunucunun kendi süresi bunu göstermez (gerçek vakada 186 ms). Önemli
+olan kullanıcı eylemi başına giden cümle sayısıdır: `pg_stat_statements_reset()` → eylemi bir kez yap →
+`select calls, query from pg_stat_statements order by calls desc`. Yüzlerce kez çalışan cümlelere ve sonucu hiç
+kullanılmayan sorgulara bakın: gerçek vakada 339 sorgunun 100'ü, açılıp okunmadan kapanan grup başına bir `SUM`'dı. Her
+yeni SQL metni veri erişim katmanına bir de alan bilgisi sorgusu yaptırır (UniDAC), yani israf iki katına çıkar.

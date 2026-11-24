@@ -39,7 +39,8 @@ build/
   build.bat, summary.py    komut satırı derlemesi + uyarı tabanı farkı
 tools/
   pas_edit.py              Pascal / DFM dosyalarında güvenli değiştirme: kod sayfası + CRLF korunur, çapa tam bir kez geçmeli,
-                           istenirse yalnız adı verilen yordamın içinde, istenirse "yalnız ekleme" denetimi
+                           istenirse yalnız adı verilen yordamın içinde, istenirse "yalnız ekleme" denetimi; --reverse
+                           uygulanmış bir spec'i geri alır (ör. geçici ölçüm satırlarını siler)
   pas_callers.py           bir yordamın bütün geçişleri: kod (içinde bulunduğu yordamla), öbür {$IF} dalları, DFM bağları,
                            ad dizgeleri, yorumlar; kanıtlı ölü kod kararı
   pascal_lex.py            araçların kullandığı küçük Pascal çözümleyicisi (iç yordamlar, {$IF} dalları)
