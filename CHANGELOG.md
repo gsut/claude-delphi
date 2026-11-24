@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `command_guard.py` rule 5: no GitHub CLI command that writes to GitHub (creating / editing / deleting releases, PRs,
+  issues, repos, workflow runs, secrets; `gh api` with a non-GET method or fields). gh stays usable for reading (view, list,
+  `gh api` GET). Catches `gh.exe` called by full path too. Setting `forbid_gh_write` (default true). Tests added.
+- `examples/settings.json`: matching `Bash(gh … *)` deny rules as the first layer.
+
 ## v0.2.0 — 24.11.2026
 
 **Tools**

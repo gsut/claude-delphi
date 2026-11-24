@@ -4,14 +4,19 @@
 #   2. No "sed -i" / "perl -i" on protected files (Pascal / DFM / scripts / docs): Git Bash sed -i strips CRs from CRLF.
 #   3. No shell redirection (>, >>, &>) or tee into a protected file: breaks the ANSI code page and CRLF line endings.
 #   4. No database connection as a user with write access (Claude works with a read-only user).
+#   5. No GitHub CLI command that writes to GitHub (creating / editing / deleting releases, PRs, issues, repos, writing
+#      gh api calls ...): like Git, gh is read-only for Claude. Catches gh.exe called by full path too, which the
+#      "Bash(gh ...)" deny rules in settings.json do not. Off with "forbid_gh_write": false.
 # Settings: $CLAUDE_PROJECT_DIR/.claude/claude-delphi.json (defaults below if missing). Input: hook JSON on stdin.
 # Output: permissionDecision = deny when a rule is broken; otherwise silent exit.
 import json
 import os
 import re
+import shlex
 import sys
 
 DEFAULTS = {
+    "forbid_gh_write": True,
     "protected_extensions": [".pas", ".dfm", ".dpr", ".dproj", ".inc", ".py", ".md"],
     "forbid_inline_python": True,
     "write_db_users": [],
@@ -127,10 +132,65 @@ def db_user_pattern(users):
     return re.compile("|".join(parts), re.I)
 
 
+# GitHub CLI subcommands that write. None = every subcommand of the group writes.
+GH_NAME = re.compile(r"^(?:.*[/\\])?gh(?:\.exe)?$", re.I)
+GH_WRITES = {
+    "release": {"create", "edit", "delete", "upload", "delete-asset"},
+    "pr": {"create", "merge", "close", "reopen", "edit", "comment", "review", "ready", "checkout", "lock", "unlock",
+           "update-branch"},
+    "issue": {"create", "close", "reopen", "edit", "comment", "delete", "transfer", "lock", "unlock", "pin", "unpin",
+              "develop"},
+    "repo": {"create", "delete", "edit", "fork", "rename", "archive", "unarchive", "sync", "set-default", "deploy-key"},
+    "workflow": {"run", "enable", "disable"},
+    "run": {"rerun", "cancel", "delete"},
+    "label": {"create", "edit", "delete", "clone"},
+    "gist": {"create", "edit", "delete", "rename", "clone"},
+    "variable": {"set", "delete"},
+    "cache": {"delete"},
+    "auth": {"login", "logout", "refresh", "token", "setup-git", "switch"},
+    "config": {"set", "clear-cache"},
+    "alias": {"set", "delete", "import"},
+    "extension": {"install", "remove", "upgrade", "create", "exec"},
+    "secret": None, "codespace": None, "project": None,
+}
+GH_API_WRITES = {"-f", "-F", "--field", "--raw-field", "--input"}
+
+
+def gh_writes(part):
+    try:
+        words = shlex.split(part, posix=True)
+    except ValueError:
+        words = part.split()
+    for i, w in enumerate(words):
+        if not GH_NAME.match(w):
+            continue
+        rest = [x for x in words[i + 1:] if x]
+        if not rest:
+            return False
+        group = rest[0]
+        sub = next((x for x in rest[1:] if not x.startswith("-")), "")
+        if group == "api":
+            for j, x in enumerate(rest):
+                if x in GH_API_WRITES or any(x.startswith(o + "=") for o in GH_API_WRITES):
+                    return True
+                if x in ("-X", "--method") and j + 1 < len(rest) and rest[j + 1].upper() != "GET":
+                    return True
+                if (x.startswith("--method=") or (x.startswith("-X") and len(x) > 2)) and not x.upper().endswith("GET"):
+                    return True
+            return False
+        if group in GH_WRITES:
+            return GH_WRITES[group] is None or sub in GH_WRITES[group]
+        return False
+    return False
+
+
 def check(command, s):
     protected = extension_pattern(s["protected_extensions"], at_end=False)
     protected_at_end = extension_pattern(s["protected_extensions"], at_end=True)
     for p in split_command(command):
+        if s.get("forbid_gh_write", True) and gh_writes(p):
+            return ("A GitHub CLI command that writes to GitHub is not allowed: gh is read-only for Claude (view / list, "
+                    "gh api GET). Creating, editing, deleting and posting are done by the developer; describe what to do.")
         if s["forbid_inline_python"] and inline_python(p):
             return ("Inline Python on the command line is not allowed. Write the script to a .py file with Write (%s), "
                     "then run it by path. Use Edit / Write to change files and Read / Grep to read them." % s["scripts_dir"])

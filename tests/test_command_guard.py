@@ -41,6 +41,24 @@ CASES = [
     ("psql postgresql://readonly:pw@host/db", False),
     ("mysql -u app_owner_ro db", False),
     ('grep -rn "app_owner" docs/', False),
+    # GitHub CLI: read-only for Claude
+    ("gh release view v0.2.0 -R owner/repo", False),
+    ("gh run list --limit 5", False),
+    ("gh pr view 12 --json title", False),
+    ("gh api repos/owner/repo/releases", False),
+    ("gh api -X GET repos/owner/repo", False),
+    ("gh auth status", False),
+    ("gh release create v0.3.0 --notes x", True),
+    ('"/c/Program Files/GitHub CLI/gh.exe" release delete v0.2.0', True),
+    ("gh pr create --title x --body y", True),
+    ("gh pr merge 12", True),
+    ("gh issue comment 5 -b x", True),
+    ("gh repo delete owner/x --yes", True),
+    ("gh api -X POST repos/owner/repo/issues -f title=x", True),
+    ("gh api repos/owner/repo/issues --method=PATCH", True),
+    ("gh secret list", True),
+    ("gh auth token", True),
+    ("git log -1 && gh workflow run ci.yml", True),
 ]
 
 
@@ -63,6 +81,14 @@ class CommandGuardTest(unittest.TestCase):
     def test_other_tools_ignored(self):
         out = run_hook("command_guard.py", {"tool_name": "Write", "tool_input": {"file_path": "a > b.pas"}}, self.project)
         self.assertIsNone(out)
+
+    def test_gh_write_can_be_allowed(self):
+        p = TempProject({"forbid_gh_write": False})
+        try:
+            out = run_hook("command_guard.py", {"tool_name": "Bash", "tool_input": {"command": "gh pr create -t x"}}, p)
+            self.assertIsNone(out)
+        finally:
+            p.close()
 
     def test_inline_python_can_be_allowed(self):
         p = TempProject({"forbid_inline_python": False})

@@ -3,6 +3,7 @@
   "pascal_extensions": [".pas", ".dfm", ".dpr", ".inc"],
   "protected_extensions": [".pas", ".dfm", ".dpr", ".dproj", ".inc", ".py", ".md"],
   "forbid_inline_python": true,
+  "forbid_gh_write": true,
   "scripts_dir": "scripts/",
   "write_db_users": ["app_owner"],
   "signature_pattern": "[A-Z]{2,4} - {date}",
