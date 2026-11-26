@@ -69,6 +69,9 @@ bütünüyle değişmiş görünür. Gerçek fark için `git diff --ignore-cr-at
 Çalışma ağacı değiştirilmez (`checkout` / `stash` ayarlarla engelli). Eski kaynak gerekiyorsa:
 
 ```
-git show <rev>:<yol>/Birim.pas > build/old/Birim.pas
-git archive <rev> <dizin> | tar -x -C build/old_source
+mkdir -p build/old && git archive <rev> <yol>/Birim.pas | tar -x -C build/old
+mkdir -p build/old_source && git archive <rev> <dizin> | tar -x -C build/old_source
 ```
+
+`git show <rev>:<yol>` yalnız ekranda okumak içindir: `hooks/command_guard.py` `.pas` dosyasına kabuk yönlendirmesini
+reddeder. İki dizin de `.gitignore`'a girer.

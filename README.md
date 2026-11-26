@@ -3,8 +3,16 @@
 [![tests](https://github.com/gsut/claude-delphi/actions/workflows/tests.yml/badge.svg)](https://github.com/gsut/claude-delphi/actions/workflows/tests.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Hooks, skills, agents, small tools and a working method for using [Claude Code](https://claude.com/claude-code) safely on a
-legacy **Delphi VCL + database** code base.
+Hooks, skills, agents, small tools and a working method for getting **correct** work out of
+[Claude Code](https://claude.com/claude-code) on a legacy **Delphi VCL + database** code base.
+
+> **The goal is correctness, not saving tokens.** Every part of this repository exists to make the AI's work right: the
+> diagnosis, the change and the report. Many steps cost tokens and time on purpose — a measurement before a fix, an
+> independent agent that reads the change without being told the plan's conclusion, a count repeated with a second method,
+> an audit at close-out even after a one-line change. On a legacy code base the expensive thing is not a long session; it
+> is a wrong fix that compiles, looks plausible and reaches a customer's data. When a choice is between a cheaper session
+> and a more reliable result, this repository chooses the reliable result. A step is dropped only when measurement shows
+> it does not catch anything, never just to save tokens.
 
 Collected over months of daily use on a real project (hundreds of units, thousands of compiler warnings, ANSI code page
 sources, a multi-tenant database). Everything specific to that project has been removed; what remains is a core you can
@@ -30,13 +38,15 @@ The places where an AI most often does damage or wastes time in a legacy Delphi 
 | Guesses from code "what else did this operation touch?" | `tools/pg_fingerprint.py` (before / after fingerprint; PostgreSQL) |
 | Builds a nice story from code and fixes without measuring | `/triage` skill: hypothesis + evidence + a measurement that tells them apart, **no code** |
 | Gets "approval" from a sub-agent that just confirms its own plan | `/review`, `/multi-review`: the agent gets only the change, not the conclusion; scope counted on four axes |
+| Calls a job "done" when the plan was only partly applied, or something outside it was touched | `/close-out` step 2b: `tools/diff_routines.py` maps the diff to routines / DFM objects against the plan, then the `closeout-auditor` agent checks plan ↔ diff and looks for breakage, before the commit |
 | Repeats the same mistake session after session; `CLAUDE.md` keeps growing | `docs/mistake-log.md`: short, every item is a **rule + a check** |
 
 ## Contents
 
 ```
 hooks/
-  command_guard.py         PreToolUse (Bash): inline Python, sed -i / redirection into protected files, write-access DB users
+  command_guard.py         PreToolUse (Bash): inline Python, sed -i / redirection into protected files, write-access DB users,
+                           GitHub CLI commands that write (gh stays read-only)
   pascal_check.py          PostToolUse: new bare LF, wrong encoding, project-specific forbidden patterns, double signatures
 build/
   build.bat, summary.py    command-line build + diff against the warning baseline
@@ -49,13 +59,15 @@ tools/
   pascal_lex.py            small Pascal lexer / routine finder used by the tools (nested routines, {$IF} branches)
   dfm_field_check.py       does the field of each control bound to a DataSource exist in the dataset
   dfm_field_usage.py       which DFM controls are bound to the given field names
-  pg_fingerprint.py        fingerprint of one record's rows across all tables, before / after diff
+  pg_fingerprint.py        fingerprint of one record's rows across all tables (public schema), before / after diff
+  diff_routines.py         change map: every diff hunk mapped to its routine (Pascal) or object chain (DFM), names
+                           missing from the plan marked; working tree, one commit or a range
 .claude/
   skills/                  build-check, triage, review, multi-review, close-out
-  agents/                  scope-counter, devils-advocate (for multi-review)
+  agents/                  scope-counter, devils-advocate (for multi-review), closeout-auditor (for close-out)
 docs/
-  mistake-log.md           method, template and 19 starter items
-  delphi-pitfalls.md       22 recurring Delphi + database pitfalls
+  mistake-log.md           method, template and 20 starter items
+  delphi-pitfalls.md       26 recurring Delphi + database pitfalls
   build-baseline.md        details and pitfalls of the build check
   case-study.md            a real case told step by step: empty twin rows, from symptom to root cause
   tr/                      Turkish translations
@@ -63,7 +75,7 @@ tests/                     unittest suite for hooks, build summary and tools
 examples/
   CLAUDE.md                team rules template
   settings.json            hook wiring + permissions that block Git write commands
-  claude-delphi.json       hook settings (code page, extensions, forbidden patterns, DB users, markers)
+  claude-delphi.json       settings read by hooks, tools and skills (code page, extensions, forbidden patterns, DB users, markers)
   readonly-user.postgresql.sql   read-only database user for Claude (PostgreSQL)
 ```
 
@@ -82,17 +94,44 @@ No pip packages: everything uses the Python standard library.
 
 ## Installation
 
-1. Copy `hooks/*.py` to your project's `.claude/hooks/` folder and `tools/` to a `tools/` folder in the project
-   (`pas_edit.py`, `pas_callers.py` and `pascal_lex.py` must stay together; the hook messages refer to `tools/pas_edit.py`).
-2. Copy `examples/settings.json` to `.claude/settings.json` (merge if you have one). `python` must be on the path.
-3. Copy `examples/claude-delphi.json` to `.claude/claude-delphi.json` and adjust it (see *Localization* below).
-4. Copy `.claude/skills/` and `.claude/agents/` into your project's `.claude/` folder.
-5. Put `build/` in a folder of your project; set `DELPHI_RSVARS`, `DELPHI_DPROJ`, `DELPHI_CONFIG`, `DELPHI_PLATFORM` in
-   `build.bat` (or as environment variables). Keep the `.bat` file CRLF. First run: `build.bat baseline`.
-6. Copy `examples/CLAUDE.md` to the project root and fill in the bracketed parts. Make `docs/mistake-log.md` the start of
-   your own log and load it from `CLAUDE.md` with `@`.
+All paths below are relative to the project root (the folder of your `.dpr`, which must be a Git repository).
 
-The hooks use Git to tell new violations from old ones; the project must be a Git repository.
+1. Copy `hooks/*.py` to your project's `.claude/hooks/` folder and `tools/` to a `tools/` folder in the project
+   (`pas_edit.py`, `pas_callers.py`, `diff_routines.py` and `pascal_lex.py` must stay together; the hook messages refer to `tools/pas_edit.py`).
+2. Copy `examples/settings.json` to `.claude/settings.json` (merge if you have one). `python` must be on the path.
+3. Copy `examples/claude-delphi.json` to `.claude/claude-delphi.json` and adjust it (table below and *Localization*).
+4. Copy `.claude/skills/` and `.claude/agents/` into your project's `.claude/` folder.
+5. Put `build/` at the project root as `build\` (the build-check skill calls `build\build.bat`; by default it builds
+   `..\Project.dproj`). Set `DELPHI_RSVARS`, `DELPHI_DPROJ`, `DELPHI_CONFIG`, `DELPHI_PLATFORM` in `build.bat` (or as
+   environment variables). Keep the `.bat` file CRLF. First run: `build.bat baseline`.
+6. Copy `examples/CLAUDE.md` to the project root and fill in the `<…>` parts. Copy `docs/mistake-log.md` and
+   `docs/delphi-pitfalls.md` to a `docs/` folder in the project: `CLAUDE.md` loads the mistake log with `@docs/mistake-log.md`,
+   and it becomes the start of your own log. Documents `CLAUDE.md` mentions that you do not have yet (screen flow map, table
+   → code index, the mistake log's story file) are skipped until you write them.
+7. Make a personal folder that is not committed (e.g. `personal/`): approved plans (`personal/plans/<id>-plan.md`, read by
+   the close-out audit), `pas_edit.py` specs, the open-issues list, log copies. Put personal settings (initials for comment
+   signatures, this folder's path) in `CLAUDE.local.md`.
+8. Add to `.gitignore`: `__pycache__/`, `build/out/`, `build/log/last.log`, `build/old/`, `build/old_source/`,
+   `CLAUDE.local.md`, `.claude/settings.local.json` and the personal folder. (Untracked files also show up in the change
+   map of `tools/diff_routines.py`.)
+9. Give Claude a read-only database user (`examples/readonly-user.postgresql.sql`; other databases under *Databases*) and
+   list the users with write access in `write_db_users`.
+10. Start a new Claude Code session and check the hooks: ask Claude to run `sed -i "s/a/b/" <some unit>.pas` — it must be
+    refused.
+
+`pas_edit.py` and `diff_routines.py` find `.claude/claude-delphi.json` through `$CLAUDE_PROJECT_DIR`, else by walking up
+from the current folder; `pas_callers.py` and the DFM tools take `--root` (default: the current folder), so run them from the
+project root.
+
+| Setting in `claude-delphi.json` | Meaning |
+|---|---|
+| `source_encoding`, `pascal_extensions`, `protected_extensions` | code page and file types the hooks and tools treat as Pascal / protect from `sed -i` and redirection |
+| `write_db_users` | database users with write access; a command connecting with one of them is refused |
+| `scripts_dir` | where one-off scripts are written (Write) and run by path, instead of inline Python |
+| `forbidden_patterns` | project-specific patterns reported when a changed Pascal file gains them, e.g. `{"pattern": "BoolToStr\\s*\\([^)]*,\\s*True\\s*\\)", "message": "use BoolToStr(x)"}`; empty by default |
+| `signature_pattern`, `date_format` | comment signature check (see *Localization*); empty pattern = off |
+| `measure_marker`, `dead_code_marker` | markers the skills and your `CLAUDE.md` use; no hook reads them |
+| `forbid_inline_python`, `forbid_gh_write` | turn the inline-Python and GitHub-CLI-write rules off (default on) |
 
 ## Tests
 
@@ -113,9 +152,9 @@ needs to adjust is configuration, not text:
 | What | Where |
 |---|---|
 | Language of answers and reports | one line in `CLAUDE.md`: "Communicate with the developer in <language>." |
-| Source code page | `source_encoding` in `claude-delphi.json`: `cp1252` (Western Europe), `cp1250` (Central Europe), `cp1251` (Cyrillic), `cp1254` (Turkish), `cp1253` (Greek), `cp932` (Japanese) ... |
+| Source code page | `source_encoding` in `claude-delphi.json`: `cp1252` (Western Europe), `cp1250` (Central Europe), `cp1251` (Cyrillic), `cp1254` (Turkish), `cp1253` (Greek) ... — single-byte code pages; multi-byte ones (e.g. `cp932` Japanese) are not tested and `pas_callers.py` assumes single-byte |
 | Date format of comment signatures | `date_format` (strftime, e.g. `%d.%m.%Y`, `%Y-%m-%d`) and `signature_pattern` (`{date}` placeholder; empty = check off) |
-| Markers in code | `measure_marker` (default `X-MEASURE`) and `dead_code_marker` (default `DEAD-CODE`) |
+| Markers in code | `measure_marker` (default `X-MEASURE`) and `dead_code_marker` (default `DEAD-CODE`); read by the skills and named in your `CLAUDE.md`, not by the hooks |
 | Localized compiler / MSBuild output | nothing to do: `build/summary.py` classifies messages by code (`E`, `F`, `W`, `H`, `MSB`), not by the localized word. Take a new baseline after changing the IDE language. |
 | Non-ASCII characters in DFMs | DFMs store them as `#nnn` escapes of the configured code page; tools read DFMs as Latin-1 and only compare ASCII property names; `pas_edit.py` refuses to write non-ASCII characters into a DFM. |
 
@@ -151,6 +190,8 @@ To see it at work on a real bug, read the [case study](docs/case-study.md) — o
 - **Git and the database are read-only for the AI.** Commits, deployment and data-changing scripts belong to the developer.
 - **A blind second reading.** For a structural change, an independent agent gets only what will change, not the plan's
   conclusion; its findings are verified in the source before being presented to the developer as facts.
+- **An independent audit before the commit.** The approved plan is written to a file before coding; at close-out an agent
+  that did not do the work compares it with the diff.
 - **At the end of every job:** how it was done, what the actual bug was, what the AI's own mistake was. A repeatable
   mistake goes into the mistake log in the same turn; a mistake a pattern can catch goes into a hook.
 
@@ -166,6 +207,9 @@ To see it at work on a real bug, read the [case study](docs/case-study.md) — o
   the hooks and tools still do.
 - `pg_fingerprint.py` and the read-only user script are PostgreSQL examples (see *Databases*).
 - The DFM tools read text DFMs (binary DFMs are not supported).
+- `pascal_check.py` catches a file saved entirely as UTF-8, not a few UTF-8 lines added to an ANSI file.
+- `pas_edit.py` does not remember applied specs: applying the same "additions only" spec twice adds the lines twice.
+- `pascal_check.py`'s built-in `date_format` default is `%d.%m.%Y`; the example settings use `%Y-%m-%d`. Set it explicitly.
 
 ## Contributing
 

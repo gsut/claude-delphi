@@ -31,7 +31,7 @@ def read(path):
 
 def main():
     log, baseline, rc = sys.argv[1], sys.argv[2], int(sys.argv[3])
-    save_baseline = len(sys.argv) > 4 and sys.argv[4].lower() in ("baseline", "taban")
+    save_baseline = len(sys.argv) > 4 and sys.argv[4].lower() == "baseline"
     lines = read(log)
 
     errors, warnings = [], []

@@ -205,3 +205,13 @@ A screen that takes 2.5 s locally may take 10 s over a network, and the server's
 Look for statements with hundreds of calls — and for queries whose result is never used: in the real case 100 of 339 were
 a per-group `SUM` whose result was opened and closed without being read. Each new SQL text also costs the data-access
 layer a metadata query (UniDAC field info), so the waste doubles.
+
+## 26. Short compiler and component traps
+
+- **`{ }` comments do not nest:** a comment containing `{` is written with `//` or `(* *)`; otherwise the first `}` closes
+  the comment and the rest is compiled as code.
+- **Anonymous methods (E2555 "Cannot capture symbol")** cannot capture a nested routine, a `var` / `out` parameter or
+  `Result`; move the nested routine's code into the anonymous method or make it a class method. The build check catches both.
+- **UniDAC: turning off `DefaultValues`** makes a NOT NULL column with a server default Required on the client; `Post` fails
+  before reaching the server ("Field '…' must have a value"). Set `Options.RequiredFields := False` too; find the columns in
+  `information_schema.columns` (`is_nullable = 'NO'` and `column_default` set).

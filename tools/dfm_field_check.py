@@ -84,3 +84,4 @@ for mod, (p, objs) in modules.items():
                     missing += 1
                     print(f'MISSING  {os.path.relpath(p, ROOT)}: {o["name"]} ({o["cls"]}) {m.group(1)} = {f}  ->  {src[0]} / {ds[1]}')
 print(f"{checked} bindings checked, {missing} missing fields")
+sys.exit(1 if missing else 0)

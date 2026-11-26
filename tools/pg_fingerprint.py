@@ -1,4 +1,4 @@
-"""Fingerprint of all rows belonging to one record (e.g. one customer file / tenant) across all tables; before / after diff.
+"""Fingerprint of all rows belonging to one record (e.g. one customer file / tenant) across all tables of the `public` schema; before / after diff.
 Answers "what else did this screen or operation touch?" by taking a fingerprint before and after running the program.
 
 Usage:
@@ -13,13 +13,17 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 from collections import Counter
 
 PSQL = os.environ.get("PSQL", "psql")
 
 
 def query(sql):
-    r = subprocess.run([PSQL, "-w", "-At", "-F", chr(9), "-c", sql], capture_output=True, text=True, encoding="utf-8")
+    try:
+        r = subprocess.run([PSQL, "-w", "-At", "-F", chr(9), "-c", sql], capture_output=True, text=True, encoding="utf-8")
+    except FileNotFoundError:
+        sys.exit("psql not found (%s): put the PostgreSQL client on the path or set PSQL to its full path" % PSQL)
     if r.returncode != 0:
         raise RuntimeError(r.stderr)
     return [s.split(chr(9)) for s in r.stdout.splitlines() if s]

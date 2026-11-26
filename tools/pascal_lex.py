@@ -1,4 +1,4 @@
-"""Small Object Pascal lexer and routine finder, shared by pas_edit.py and pas_callers.py.
+"""Small Object Pascal lexer and routine finder, shared by pas_edit.py, pas_callers.py and diff_routines.py.
 
 Not a compiler: it separates comments, strings and identifiers, and finds where every routine (including nested
 routines, class methods, operators, generic methods) starts and ends by matching begin / end. When the structure is

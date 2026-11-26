@@ -18,7 +18,9 @@ Adding a sentence to `CLAUDE.md` after every mistake soon stops working: the fil
    only for mistakes that need judgement.
 
 Review it monthly with the developer; delete items that turned out to be useless. Item numbers never change (other
-documents refer to them); merged items keep their old numbers in square brackets.
+documents refer to them); merged items keep their old numbers in square brackets. The AI only **proposes** deleting an
+item or loosening a check; the developer decides at the monthly review. A check shown wrong by a measurement is fixed in
+the same turn and reported to the developer separately.
 
 ## Item template
 
@@ -61,8 +63,8 @@ is marked "explained from code, not verified in data".
 
 **[5] Verify "none" and "this many" results.**
 *Check:* before reporting absence, repeat the search case-insensitively and search, with the same method, for a name known
-to exist (if the positive control is also 0, the method is broken). Before reporting a number, remove duplicate lines
-(`sort | uniq -d`); when counting code, filter out comment lines and open three results by hand.
+to exist (if the positive control is also 0, the method is broken). Before reporting a number, check for duplicate lines
+(`sort | uniq -d` must print nothing); when counting code, filter out comment lines and open three results by hand.
 
 **[6] A claim in a sub-agent's report is not presented to the developer as fact until you have verified it yourself.**
 The report is another model's output: wrong things arrive with the same confidence.
@@ -88,15 +90,23 @@ path down as "unreachable".
 
 ### Scope and generalisation
 
-**[10] Before generalising, narrowing or fixing a finding in one place, show the callers and branches with their lines.**
+**[10] Before generalising a finding or stating a count, search the whole source; show every place with its line.**
 *Check:*
 - "The same pattern is also in X" → quote the line in X. "Dead code" → list every call line with its branch.
-- Before putting a fix next to one call, list all callers of the routine; if all share the defect, the fix goes inside the
-  routine.
-- When putting a call under a condition, list what the old call also did when the condition is **not** met, and test it.
 - Before stating how many copies a pattern has, search the whole source. Before calling something "dead", show which body
   the call line is in by matching `begin`/`end`: in Pascal, nested routines can start at column 0. `tools/pas_callers.py`
   does this and lists code references, other `{$IF}` branches, DFM bindings, name strings and comments separately.
+- Before a bulk fix, show the path that reaches each copy (DFM event binding or call); the reachability list is the input
+  of the edit script. Copies with no path are listed as dead and reported, not fixed.
+
+**[20] Before removing, narrowing or conditioning a call, or choosing where a fix goes, read the caller side and everything
+the old call did.**
+*Check:*
+- The plan has a table: each removed / narrowed / conditioned call → what the old call also did (when the condition is
+  **not** met, before an early `exit`; side effects of `Close` or a cleanup) → test step. When a delete is narrowed to
+  "only my rows", re-read the loops and queries that read the same table next.
+- Before putting a fix next to one call, list all callers of the routine; if all share the defect, the fix goes inside the
+  routine. Before changing a form's event handler, find every place that creates the form.
 
 **[11] If an object's meaning will change, count the scope on four axes:** (1) calls — all spellings of the name;
 (2) field accesses in the same routine after a call that changes position; (3) DFM bindings (`DataSource` /
@@ -138,7 +148,8 @@ filled") is also enforced in code (`LIMIT 1`, a constraint, a condition).
   "double-click a locked cell and try to type" to the test steps.
 
 **[17] Two traps the compiler catches.** Delphi `{ }` comments do not nest (a comment containing `{` uses `//`); an
-anonymous method cannot capture a nested routine, a `var` / `out` parameter or `Result` (E2555).
+anonymous method cannot capture a nested routine, a `var` / `out` parameter or `Result` (E2555). Details:
+`delphi-pitfalls.md` §26.
 *Check:* `/build-check`.
 
 ### Writing to files and documents
@@ -148,8 +159,8 @@ anonymous method cannot capture a nested routine, a `var` / `out` parameter or `
 - Pascal / DFM files are changed with `tools/pas_edit.py`: it keeps the code page and CRLF, refuses an anchor that does
   not occur exactly once, can limit the search to one routine (copies of a routine carry the same anchor) and, with
   `additions_only`, refuses a change that would remove or alter an existing line.
-- *Manual check:* after the edit, `git diff --ignore-cr-at-eol -- <file>` shows only the intended lines; the written text is
-  verified with `grep`.
+- *Manual check:* before rewriting a file the developer has fixed on disk, read the on-disk version. After the edit,
+  `git diff --ignore-cr-at-eol -- <file>` shows only the intended lines; the written text is verified with `grep`.
 
 **[19] Close-out: is the fix active in the code, are the documents current?**
 *Check:* show the fix line in today's source with `grep`; find other documents mentioning the subject with `grep -ln` and

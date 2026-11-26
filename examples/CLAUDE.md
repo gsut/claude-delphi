@@ -21,9 +21,14 @@ folders) live in `CLAUDE.local.md`, which is not committed.
 
 ## Way of working
 
-- **Hypothesis first, then approval, then the fix.** "The cause is X, my evidence is Y" → developer approves → code.
+- **Correctness over token savings.** When a step costs tokens or time but makes the result more reliable (a measurement,
+  an independent review, a second count, the close-out audit), it is done. A step is skipped only when the developer says so.
+- **Hypothesis first, then approval, then the fix.** "The cause is X, my evidence is Y" → developer approves → code. The
+  approved plan is written to `<personal folder>\plans\<id>-plan.md` as approved, before any code (and updated if the plan
+  changes); the close-out audit reads the plan from there.
 - **Measure first.** A story built from code is weaker than a single-variable experiment; temporary measurement lines are
-  added with the measure marker (`X-MEASURE`) and removed when the work is done.
+  added with the measure marker (`measure_marker` in `.claude/claude-delphi.json`, default `X-MEASURE`) and removed when
+  the work is done.
 - **The best solution, not the fastest**; a quick patch only when explicitly asked.
 - **Surgical changes.** Only the lines the request needs; adjacent code, formatting and dead code are not touched (dead code
   is reported; once a review confirms it is dead it gets the dead-code marker, it is not deleted).
@@ -33,12 +38,13 @@ folders) live in `CLAUDE.local.md`, which is not committed.
   goes into the mistake log in the same turn (rule + check).
 - **Build verification is Claude's job** (`/build-check`): 0 errors and 0 new warnings vs baseline. Testing and deployment
   are the developer's.
-- **Git is read-only** (log, show, diff, blame, archive). Claude does not commit, push, check out etc.
+- **Git is read-only** (log, show, diff, blame, archive). Claude does not commit, push, check out etc. The GitHub CLI is
+  read-only too (`view`, `list`, `gh api` GET); creating, editing, commenting and releasing are the developer's.
 
 ## Code rules
 
-- **Dead-code marker:** a block confirmed dead by review is not deleted; above it goes
-  `// DEAD-CODE: <evidence>. <initials> - <date>`. Evidence is short and repeatable: results of searching for callers / DFM
+- **Dead-code marker** (`dead_code_marker` in `.claude/claude-delphi.json`, default `DEAD-CODE`; the examples below use the
+  default): a block confirmed dead by review is not deleted; above it goes `// DEAD-CODE: <evidence>. <initials> - <date>`. Evidence is short and repeatable: results of searching for callers / DFM
   bindings / name strings (`python tools/pas_callers.py <Name>` prints all of them and a ready evidence line). Deleting is a separate cleanup decision; candidate list `grep -rn "DEAD-CODE:" --include=*.pas .`.
 - Pascal sources are **<code page> + CRLF**. DFMs are ASCII; non-ASCII characters as `#nnn` escapes. `.md` files are UTF-8.
 - Pascal / DFM files are changed with `tools/pas_edit.py` (keeps the code page and CRLF; the anchor must occur exactly
@@ -60,12 +66,15 @@ folders) live in `CLAUDE.local.md`, which is not committed.
 
 ## Tool checks and commands (`.claude\`, committed)
 
-- `hooks\command_guard.py` — refuses inline Python, `sed -i` / redirection on protected files, write-access DB users.
+- `hooks\command_guard.py` — refuses inline Python, `sed -i` / redirection on protected files, write-access DB users,
+  GitHub CLI commands that write.
 - `hooks\pascal_check.py` — reports new bare LFs, wrong encoding, project-specific forbidden patterns and double signatures
   in changed Pascal / DFM files (compared with the committed version).
 - Tools (`tools\`): `pas_edit.py` (the only way Pascal / DFM files are edited), `pas_callers.py` (references and dead-code
-  evidence), `dfm_field_check.py` / `dfm_field_usage.py` (DFM bindings), `pg_fingerprint.py` (before / after data diff).
-- Commands: `/build-check`, `/triage`, `/review`, `/multi-review`, `/close-out`.
+  evidence), `dfm_field_check.py` / `dfm_field_usage.py` (DFM bindings), `pg_fingerprint.py` (before / after data diff),
+  `diff_routines.py` (change map: diff hunks → routines / DFM objects, checked against the plan).
+- Commands: `/build-check`, `/triage`, `/review`, `/multi-review`, `/close-out` (with the independent `closeout-auditor`
+  agent before the commit).
 - A new mistake that a pattern can catch goes into these checks, not into the mistake log.
 
 ## Not committed

@@ -106,4 +106,4 @@ Her biri aynı turda hata defterine kural + kontrol olarak ya da bir araca girdi
 | `Edit` = `Insert` | kapsamı dört eksende sayan kör inceleme ([11]); ajan iddiasını doğrulamak ([6]) |
 | `BeforeInsert` uyarısı | kalan yolları tahmin etmek yerine ölçmek |
 | Temizliğin onarım aracında olması | kalıcı yan etki açık bir eyleme bağlı, program açılışına değil ([14]) |
-| Önce / sonra parmak izi | bir yeniden düzenlemenin hiçbir şeyi değiştirmediğini göstermek ([4]) |
+| Önce / sonra parmak izi | bir yeniden düzenlemenin hiçbir şeyi değiştirmediğini göstermek ([1]) |

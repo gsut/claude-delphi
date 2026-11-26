@@ -10,10 +10,5 @@
   "date_format": "%Y-%m-%d",
   "measure_marker": "X-MEASURE",
   "dead_code_marker": "DEAD-CODE",
-  "forbidden_patterns": [
-    {
-      "pattern": "BoolToStr\\s*\\([^)\\r\\n]*,\\s*True\\s*\\)",
-      "message": "BoolToStr(x, True) added; this code base uses BoolToStr(x)"
-    }
-  ]
+  "forbidden_patterns": []
 }

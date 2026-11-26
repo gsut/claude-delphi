@@ -72,7 +72,7 @@ yüzünden yalnız ilk koşul güncelleniyor.
 
 **Çözüm kalıbı.** Her gösterge kendi verisine göre **bağımsız ve iki yönlü** yazılır.
 
-## 6. Bileşen hatayı yutuyor — ama loga yazıyor
+## 6. Yardımcı yordam hatayı yutuyor — ama loga yazıyor
 
 Yardımcı "SQL çalıştır" yordamları çoğu kez `except` içinde hatayı loga yazıp devam eder. Bir cümle hiçbir şey yapmamış
 görünüyorsa **önce loga bak**. Yeni yazılan kodda hata yutulacaksa en az loga yazılır.
@@ -177,7 +177,7 @@ okunursa iki yer farklı karar verir.
 
 ## 22. Ad yanıltır; grep sonucunu tam oku
 
-Bir ayar kolonunu anlamına göre değil, onu dolduran kodun yaptığına göre okuyun. "Bu bayrak hiç True olmuyor" demeden önce
+Bir ayar kolonunu adına göre değil, onu dolduran kodun yaptığına göre okuyun. "Bu bayrak hiç True olmuyor" demeden önce
 bütün atama satırlarını okuyun; tek bir kaçan satır "ölü" hükmünü yanlış yapar.
 
 ## 23. Ana tablo bağı olmayan küme + döngüde `Refresh` = bütün tablo, tekrar tekrar
@@ -201,3 +201,13 @@ olan kullanıcı eylemi başına giden cümle sayısıdır: `pg_stat_statements_
 `select calls, query from pg_stat_statements order by calls desc`. Yüzlerce kez çalışan cümlelere ve sonucu hiç
 kullanılmayan sorgulara bakın: gerçek vakada 339 sorgunun 100'ü, açılıp okunmadan kapanan grup başına bir `SUM`'dı. Her
 yeni SQL metni veri erişim katmanına bir de alan bilgisi sorgusu yaptırır (UniDAC), yani israf iki katına çıkar.
+
+## 26. Derleyicinin ve bileşenin kısa tuzakları
+
+- **`{ }` yorumları iç içe olmaz:** içinde `{` geçen yorum `//` ya da `(* *)` ile yazılır; yoksa ilk `}` yorumu kapatır,
+  devamı kod sayılır.
+- **Anonim metot (E2555 "Cannot capture symbol")** iç içe yordamı, `var` / `out` parametreyi ve `Result`'ı yakalayamaz;
+  iç içe yordamın kodu anonim metodun içine alınır ya da sınıf metodu yapılır. İkisini de derleme denetimi yakalar.
+- **UniDAC'ta `DefaultValues` kapatılınca** sunucu varsayılanlı NOT NULL kolon istemcide Required olur; `Post` sunucuya
+  gitmeden "Field '…' must have a value" verir. `Options.RequiredFields := False` da gerekir; kolonlar
+  `information_schema.columns`'tan bulunur (`is_nullable = 'NO'` ve `column_default` dolu).

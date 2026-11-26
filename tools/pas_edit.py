@@ -21,7 +21,7 @@ Rules (nothing is written if any rule fails):
 - every "old" must occur exactly once (inside the routine when "routine" is given); edits apply in order;
 - an "old" that ends with a line break matches only at the start of a line (never inside a more indented line);
 - "routine" must match exactly one routine; for copies of the same routine in one file, give the routine;
-- the new text must be representable in the file's code page; DFM files must stay ASCII (#nnn escapes for others);
+- the new text must be representable in the file's code page; text inserted into a DFM must be ASCII (#nnn escapes for others);
 - with additions_only, the line diff must contain no removed lines.
 Prints a unified diff of the change. Exit code 0 on success, 1 on refusal.
 """
@@ -38,8 +38,22 @@ import pascal_lex  # noqa: E402
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
+def project_root():
+    """$CLAUDE_PROJECT_DIR, else the nearest folder upwards holding .claude/claude-delphi.json, else the current folder."""
+    if os.environ.get("CLAUDE_PROJECT_DIR"):
+        return os.environ["CLAUDE_PROJECT_DIR"]
+    d = os.getcwd()
+    while True:
+        if os.path.isfile(os.path.join(d, ".claude", "claude-delphi.json")):
+            return d
+        up = os.path.dirname(d)
+        if up == d:
+            return os.getcwd()
+        d = up
+
+
 def project_encoding():
-    root = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    root = project_root()
     try:
         with open(os.path.join(root, ".claude", "claude-delphi.json"), encoding="utf-8") as f:
             return json.load(f).get("source_encoding", "cp1252")

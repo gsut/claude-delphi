@@ -16,7 +16,7 @@ object being changed.
   **"not verified"**.
 - Before saying "none", repeat the search case-insensitively and find a name known to exist with the same method (is the
   method right?).
-- Before giving a number, remove duplicate lines (`sort | uniq`).
+- Before giving a number, check for duplicate lines (`sort | uniq -d` must print nothing).
 - Where to read: project root, component sources, the project's code pitfalls document.
 - For the "calls" axis, run `python tools/pas_callers.py <Name>` if the project has it, and add what a text search finds
   beyond it (the tool has no type information: same-named methods of other classes are listed too).

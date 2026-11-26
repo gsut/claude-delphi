@@ -58,7 +58,8 @@ Write it in this form and stop:
   will tell apart.
 - **Proposed fix:** the best solution (a quick patch only if explicitly asked); if it touches copies of the same routine,
   a plan to merge them; if it changes data, which commit point it is tied to.
-- **Scope:** files and routines to touch; other callers of the same routine.
+- **Scope:** files and routines to touch; other callers of the same routine. For every call that will be removed, narrowed
+  or put under a condition: what else the old call did (mistake log [20]); once approved, this table goes into the plan file.
 - **Questions:** only those the code and data cannot answer. The team's terms and business rules are asked, not guessed;
   but before writing a question, list what the old code does today and who reads the field.
 

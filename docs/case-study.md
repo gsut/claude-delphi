@@ -112,4 +112,4 @@ Each of these went into the mistake log as a rule + a check, or into a tool, in 
 | `Edit` = `Insert` | a blind review counting scope on four axes ([11]); verifying the agent's claim ([6]) |
 | `BeforeInsert` warning | measure the remaining paths instead of guessing them |
 | Cleanup in the repair tool | lasting side effects tied to an explicit action, not to program start ([14]) |
-| Fingerprint before / after | show that a refactor changed nothing ([4]) |
+| Fingerprint before / after | show that a refactor changed nothing ([1]) |

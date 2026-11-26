@@ -22,8 +22,9 @@ Also list the plan's assumptions one by one ("the table has one row per record",
 
 - `scope-counter`: the task text contains only the object(s) that will change (routine / dataset / form and file) and the
   description of the change (what is moved, removed, merged). **No assumption list and no conclusion of the plan.**
-- `devils-advocate`: the same description + the assumption list from step 1 + the path of the request document, if any.
-  No judgement sentences ("we think it is safe").
+- `devils-advocate`: the same description + the assumption list from step 1 + the plan's "removed / narrowed call → what
+  the old call also did" table (mistake log [20]; if there is none, write "no table") + the path of the request document,
+  if any. No judgement sentences ("we think it is safe").
 
 Both agents are instructed to be read-only; only the instruction keeps them from using Bash to write. Afterwards, check with
 `git status --short` that the working tree has no unexpected changes.

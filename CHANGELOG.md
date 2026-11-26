@@ -1,11 +1,55 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 — 26.11.2026
 
+The project's goal is now stated at the top of the README: **correctness of the work, not saving tokens.** This release
+adds an independent audit at close-out and comes out of the first monthly review of the mistake log and two independent
+audits of the package itself.
+
+**Close-out audit (new)**
+- `tools/diff_routines.py`: change map — every diff hunk mapped to its routine (Pascal) or object chain (DFM); names
+  missing from the plan marked "NOT IN PLAN"; working tree, `--commit` or `--rev A..B`; non-ASCII file names. 11 tests.
+- `closeout-auditor` agent and `/close-out` step 2b: an agent that did not do the work compares the approved plan with the
+  diff (plan carried out? anything touched outside it? anything broken?) before the commit; its findings are verified by
+  hand. In the project this comes from, it found six real bugs in one fifteen-file change before the commit.
+- `examples/CLAUDE.md`: the approved plan is written to a file before coding; "correctness over token savings" rule.
+
+**Hooks**
 - `command_guard.py` rule 5: no GitHub CLI command that writes to GitHub (creating / editing / deleting releases, PRs,
-  issues, repos, workflow runs, secrets; `gh api` with a non-GET method or fields). gh stays usable for reading (view, list,
-  `gh api` GET). Catches `gh.exe` called by full path too. Setting `forbid_gh_write` (default true). Tests added.
+  issues, repos, workflow runs, secrets; `gh api` with a non-GET method or fields). gh stays usable for reading (view,
+  list, `gh api` GET). Catches `gh.exe` called by full path too. Setting `forbid_gh_write` (default true). Tests added.
 - `examples/settings.json`: matching `Bash(gh … *)` deny rules as the first layer.
+
+**Tools**
+- `pas_edit.py` and `diff_routines.py` find the project root by walking up to `.claude/claude-delphi.json` when
+  `$CLAUDE_PROJECT_DIR` is not set (from a subfolder the settings were silently ignored). Test added.
+- `dfm_field_check.py` exits with 1 when a field is missing; `pg_fingerprint.py` says clearly when `psql` is not found;
+  `build/summary.py` accepts only `baseline` (the undocumented `taban` is gone).
+
+**Mistake log and pitfalls** (English and Turkish)
+- First monthly review: [10] split into [10] "search the whole source before generalising or counting" and new [20]
+  "before removing / narrowing a call, list what the old call did" — a table in the plan, asked for by `/triage`,
+  `/multi-review`, `devils-advocate` and checked at `/close-out`. [17] points to the new pitfall §26; [18] adds "read the
+  developer's on-disk version before rewriting". The AI only proposes deleting an item or loosening a check.
+- [5] and `scope-counter`: `sort | uniq -d` must print nothing (it does not remove duplicates).
+- Pitfall §26: nested `{ }` comments, E2555, UniDAC `DefaultValues` + `RequiredFields`. Now 20 starter items, 26 pitfalls.
+
+**Installation and documents**
+- README (English and Turkish): Installation rewritten — project-root paths, `build\` at the root, copy
+  `docs/mistake-log.md` and `docs/delphi-pitfalls.md`, a personal folder for plans and specs, `.gitignore` lines, a
+  read-only database user, a hook check after install; a table of every `claude-delphi.json` key; known limits (mixed
+  UTF-8 lines in an ANSI file, a re-applied "additions only" spec, `date_format` default); `cp932` marked untested.
+- `examples/claude-delphi.json`: `forbidden_patterns` is empty (the `BoolToStr` rule was project-specific; it is an
+  example in the README now). `examples/CLAUDE.md`: GitHub CLI read-only rule; markers named with their settings.
+- `docs/build-baseline.md`: old source is extracted with `git archive | tar` (the `git show … > Unit.pas` recipe was refused
+  by `command_guard.py`).
+- Smaller fixes: case study table points to [1] instead of [4]; two Turkish pitfall wordings; Turkish README structure;
+  `pg_fingerprint` public schema only; docstrings of `pas_edit.py` / `pascal_lex.py`.
+
+**Independence check:** a fresh install from the README into a throwaway project, with no access to the original project,
+ran the tests, tools and hooks; no leak of or dependency on the original project was found.
+
+**Tests:** 47 (was 32 at v0.1.0).
 
 ## v0.2.0 — 24.11.2026
 

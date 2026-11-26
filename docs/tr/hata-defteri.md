@@ -21,7 +21,9 @@ tekrar eder, "dikkatli ol" türü cümleler hiçbir şeyi değiştirmez. Defter 
    gerektiren hatalar içindir.
 
 Ayda bir gözden geçirilir; işe yaramadığı görülen madde silinir. Madde numaraları değişmez (başka belgeler numarayla
-atıf yapar), birleştirilen maddeler köşeli parantezde eski numaralarını taşır.
+atıf yapar), birleştirilen maddeler köşeli parantezde eski numaralarını taşır. Yapay zekâ bir maddeyi silmeyi ya da
+kontrolünü gevşetmeyi yalnız **önerir**; karar aylık gözden geçirmede geliştiricinindir. Ölçümle yanlışlığı gösterilen bir
+kontrol aynı turda düzeltilir ve geliştiriciye ayrıca bildirilir.
 
 ## Madde şablonu
 
@@ -63,7 +65,7 @@ doğrulanmadı" diye işaretlenir.
 
 **[5] "Yok" ve "şu kadar" sonucunu doğrula.**
 *Kontrol:* yokluk bildirilmeden önce arama harf duyarsız tekrarlanır ve aynı yöntemle var olduğu bilinen bir ad aranır
-(pozitif de 0 ise yöntem bozuktur). Bir sayı raporlanmadan önce yinelenen satırlar elenir (`sort | uniq -d`); kod
+(pozitif de 0 ise yöntem bozuktur). Bir sayı raporlanmadan önce yinelenen satır olup olmadığına bakılır (`sort | uniq -d` boş dönmeli); kod
 sayımında yorum satırları ayıklanır ve sonuçtan üç satır elle açılır.
 
 **[6] Bir incelemenin (alt ajan) raporundaki iddia, kendi gözünle doğrulanmadan geliştiriciye olgu olarak sunulmaz.**
@@ -89,15 +91,23 @@ anlamı adından değil atandığı yerden söylenir (`grep -n "<Bayrak> *:="`).
 
 ### Kapsam ve genelleme
 
-**[10] Bir bulguyu genellemeden, daraltmadan ya da tek yerde düzeltmeden önce çağıranları ve dalları satırıyla göster.**
+**[10] Bir bulguyu genellemeden ya da sayı söylemeden önce bütün kaynakta ara; her yeri satırıyla göster.**
 *Kontrol:*
 - "Aynı kalıp X'te de var" → X'teki satır alıntılanır. "Ölü kod" → her çağrı satırı dalıyla listelenir.
-- Düzeltmeyi bir çağrının yanına koymadan önce yordamın bütün çağıranları listelenir; hepsi aynı eksiği taşıyorsa
-  düzeltme yordamın içine gider.
-- Bir çağrıyı koşula bağlarken, eski çağrının koşul **sağlanmadığında** da yaptığı işler listelenir ve test edilir.
 - Bir kalıbın kopya sayısı söylenmeden önce bütün kaynakta desenle aranır. "Ölü" demeden önce çağrı satırının hangi
   gövdede olduğu `begin`/`end` eşleşmesiyle gösterilir: Pascal'da iç yordamlar sütun 0'dan yazılabiliyor. `tools/pas_callers.py`
   bunu yapar; kod geçişlerini, öbür `{$IF}` dallarını, DFM bağlarını, ad dizgelerini ve yorumları ayrı listeler.
+- Toplu düzeltmeden önce her kopyaya ulaşan yol (DFM olay bağı ya da çağrı) gösterilir; erişim listesi düzenleme betiğinin
+  girdisidir. Yolu olmayan kopyalar "ölü" diye ayrı listelenir ve bildirilir, düzeltilmez.
+
+**[20] Bir çağrıyı kaldırmadan, daraltmadan, koşula bağlamadan ya da düzeltmenin yerini seçmeden önce çağıran tarafını ve
+eski çağrının yaptığı her işi oku.**
+*Kontrol:*
+- Planda tablo bulunur: kaldırılan / daraltılan / koşula bağlanan her çağrı → eski çağrının yaptığı öbür işler (koşul
+  **sağlanmadığında**, erken `exit`'ten önce; `Close` ya da temizlik yan etkileri) → test adımı. Bir silme "yalnız benim
+  satırlarım"a daraltılınca ardından aynı tabloyu okuyan döngü ve sorgular yeniden okunur.
+- Düzeltmeyi bir çağrının yanına koymadan önce yordamın bütün çağıranları listelenir; hepsi aynı eksiği taşıyorsa
+  düzeltme yordamın içine gider. Bir formun olay işleyicisi değişmeden önce formu oluşturan her yer aranır.
 
 **[11] Bir nesnenin anlamı değişecekse kapsam dört eksende sayılır:** (1) çağrılar — adın bütün yazılış biçimleriyle;
 (2) konum değiştiren çağrıdan sonra aynı yordamdaki alan erişimleri; (3) DFM bağları (`DataSource` / `MasterSource` /
@@ -140,7 +150,7 @@ garantiye alınır (`LIMIT 1`, kısıt, koşul).
   adımına "kilitli hücreye çift tıkla, yazmayı dene" girer.
 
 **[17] Derlemenin yakaladığı iki tuzak.** Delphi yorumunda `{ }` iç içe olmaz (içinde `{` geçen yorum `//` ile); anonim
-metot iç içe yordamı, `var` / `out` parametreyi ve `Result`'ı yakalayamaz (E2555).
+metot iç içe yordamı, `var` / `out` parametreyi ve `Result`'ı yakalayamaz (E2555). Ayrıntı: `delphi-tuzaklari.md` §26.
 *Kontrol:* `/build-check`.
 
 ### Dosyaya ve belgeye yazma
@@ -150,8 +160,8 @@ metot iç içe yordamı, `var` / `out` parametreyi ve `Result`'ı yakalayamaz (E
 - Pascal / DFM dosyaları `tools/pas_edit.py` ile değişir: kod sayfasını ve CRLF'i korur, tam bir kez geçmeyen çapayı
   reddeder, aramayı tek bir yordamla sınırlayabilir (kopya yordamlar aynı çapayı taşır) ve `additions_only` ile var olan bir
   satırı silecek ya da değiştirecek düzenlemeyi reddeder.
-- *Elle kontrol:* düzenlemeden sonra `git diff --ignore-cr-at-eol -- <dosya>` yalnız istenen satırları gösterir; yazılan metin
-  `grep` ile doğrulanır.
+- *Elle kontrol:* geliştiricinin diskte düzelttiği dosya yeniden yazılmadan önce diskteki sürümü okunur. Düzenlemeden sonra
+  `git diff --ignore-cr-at-eol -- <dosya>` yalnız istenen satırları gösterir; yazılan metin `grep` ile doğrulanır.
 
 **[19] Kapanış: düzeltme kodda etkin mi, belgeler güncel mi.**
 *Kontrol:* düzeltme satırı bugünkü kaynakta `grep` ile gösterilir; konuyu anan öbür belgeler `grep -ln` ile bulunur ve her

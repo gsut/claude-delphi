@@ -70,6 +70,9 @@ shows as entirely changed in `git diff`. For the real difference use `git diff -
 The working tree is not changed (`checkout` / `stash` are blocked by the settings). If old source is needed:
 
 ```
-git show <rev>:<path>/Unit.pas > build/old/Unit.pas
-git archive <rev> <folder> | tar -x -C build/old_source
+mkdir -p build/old && git archive <rev> <path>/Unit.pas | tar -x -C build/old
+mkdir -p build/old_source && git archive <rev> <folder> | tar -x -C build/old_source
 ```
+
+`git show <rev>:<path>` is for reading on screen only: `hooks/command_guard.py` refuses a shell redirection into a `.pas`
+file. Both folders belong in `.gitignore`.
