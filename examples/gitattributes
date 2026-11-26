@@ -1,0 +1,34 @@
+# Copy to your project root as .gitattributes.
+#
+# Delphi sources are stored with LF in the repository and always checked out with CRLF, whatever each machine's
+# core.autocrlf says. Mixed line endings cannot be committed (Git normalizes them).
+#
+# What this does NOT cover (the hooks are still needed):
+# - a bare LF written into a working file stays on disk until the next commit, and the compiler and IDE read the working
+#   file: hooks/pascal_check.py reports it at write time;
+# - the code page: an ANSI (cp1252 / cp1254 ...) source saved as UTF-8 is not an end-of-line problem.
+#
+# In an existing repository, after adding this file run once:  git add --renormalize .   and commit that separately
+# (it may touch many files; tell the team first).
+
+*.pas     text eol=crlf
+*.dpr     text eol=crlf
+*.dpk     text eol=crlf
+*.inc     text eol=crlf
+# Binary DFMs (very old projects, or "Text DFM" switched off in the IDE) would be corrupted by "text". Before adding this
+# file run  python tools/dfm_text_check.py  and convert every binary DFM it lists (IDE: right-click the form > Text DFM, save;
+# or Delphi's bin\convert.exe -i -t <file.dfm>).
+*.dfm     text eol=crlf
+*.fmx     text eol=crlf
+*.dproj   text eol=crlf
+*.groupproj text eol=crlf
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# Binary Delphi files: never convert.
+*.res     binary
+*.dcu     binary
+*.exe     binary
+*.dll     binary
+*.bpl     binary
+*.dcp     binary

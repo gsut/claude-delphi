@@ -37,6 +37,7 @@ Every hook, guardrail, and sub-agent in this repository was forged over months o
 | **Blind Guessing on DB Side Effects:** AI guesses what a stored procedure or trigger touched. | **`tools/pg_fingerprint.py`** — Takes before/after row hashes across tables to prove database impact. |
 | **Confirmation Bias in AI Reviews:** A sub-agent simply agrees with the main agent's plan. | **`/review` & `/multi-review` skills** — Blindly audits only the diff without seeing the original reasoning. |
 | **Incomplete Implementations:** AI stops halfway or edits unrelated routines. | **`/close-out` + `tools/diff_routines.py`** — Maps every diff hunk to Pascal routines/DFM objects and audits against your approved plan. |
+| **Binary DFMs:** Old forms saved in binary are unreadable for the AI and get corrupted by line-ending rules. | **`hooks/session_check.py`** + **`tools/dfm_text_check.py`** — Warns at the start of every session and lists them; `pas_edit.py` refuses to touch one until you convert it to text. |
 | **Repeating the Same Mistakes:** Your `CLAUDE.md` turns into an unreadable 2,000-line novel. | **`docs/mistake-log.md`** — A structured, concise log where every mistake becomes a **Rule + Automated Check**. |
 
 ---
@@ -51,12 +52,20 @@ Every hook, guardrail, and sub-agent in this repository was forged over months o
 
 ---
 
+## 🚀 Getting Started
+
+Requirements, step-by-step installation, every setting in `claude-delphi.json`, localization, database notes and known
+limits: **[docs/installation.md](docs/installation.md)**. Start with its first step — checking for binary DFMs.
+
+---
+
 ## 📦 Repository Structure
 
 ```text
 ├── hooks/
+│   ├── session_check.py      # SessionStart: Warns (through Claude) if the project has binary DFMs
 │   ├── command_guard.py      # PreToolUse: Blocks sed -i, inline Python, DB write users, and gh write commands
-│   └── pascal_check.py       # PostToolUse: Guards encoding (CP125x), CRLF, forbidden patterns, and comment signatures
+│   └── pascal_check.py       # PostToolUse: Guards encoding (CP125x), CRLF, forbidden patterns, comment signatures, binary DFMs
 ├── build/
 │   ├── build.bat             # MSBuild wrapper for Delphi (.dproj)
 │   └── summary.py            # Compares compiler warnings/errors against your saved baseline
@@ -67,15 +76,20 @@ Every hook, guardrail, and sub-agent in this repository was forged over months o
 │   ├── dfm_field_check.py    # Validates DFM control fields against dataset definitions
 │   ├── dfm_field_usage.py    # Finds which DFM controls bind to specific database fields
 │   ├── pg_fingerprint.py     # Before/after database record fingerprinter (PostgreSQL)
-│   └── diff_routines.py      # Maps git diff hunks to Pascal routines and DFM component chains
+│   ├── diff_routines.py      # Maps git diff hunks to Pascal routines and DFM component chains
+│   └── dfm_text_check.py     # Lists binary DFMs that must be converted to text
 ├── .claude/
 │   ├── skills/               # Custom workflows: /build-check, /triage, /review, /multi-review, /close-out
 │   └── agents/               # Specialized sub-agents: scope-counter, devils-advocate, closeout-auditor
 ├── docs/
+│   ├── installation.md       # Requirements, installation, settings, localization, databases, limits
 │   ├── mistake-log.md        # Methodology, template, and 20 starter rules
 │   ├── delphi-pitfalls.md    # 26 recurring Delphi VCL + SQL pitfalls
 │   ├── build-baseline.md     # Deep dive into baseline warning management
 │   ├── case-study.md         # Step-by-step walkthrough of a real bug hunt
 │   └── tr/                   # Turkish documentation
-├── examples/                 # Ready-to-use CLAUDE.md, settings.json, claude-delphi.json, and read-only SQL scripts
+├── examples/                 # Ready-to-use CLAUDE.md, settings.json, claude-delphi.json, gitattributes (copy as .gitattributes), and read-only SQL scripts
 └── tests/                    # Full unittest suite (runs on Windows & Ubuntu)
+```
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Changes: [CHANGELOG.md](CHANGELOG.md). License: [MIT](LICENSE).

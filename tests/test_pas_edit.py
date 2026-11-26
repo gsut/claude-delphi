@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 
-from helpers import TOOLS, TempProject, run_tool, write_sample
+from helpers import BINARY_DFM, TOOLS, TempProject, run_tool, write_sample
 
 PAS_EDIT = os.path.join(TOOLS, "pas_edit.py")
 ANCHOR = "  Result := False; // Ölçüm\n"     # at line start once in First and once in Second (plus once more indented)
@@ -111,6 +111,19 @@ class PasEditTest(unittest.TestCase):
         r = run_tool(PAS_EDIT, [spec], self.project)
         self.assertEqual(r.returncode, 1)
         self.assertIn("ASCII", r.stdout)
+
+    def test_binary_dfm_refused(self):
+        dfm = os.path.join(self.project.dir, "Bin.dfm")
+        with open(dfm, "wb") as f:
+            f.write(BINARY_DFM)
+        spec = os.path.join(self.project.dir, "bin.json")
+        with open(spec, "w", encoding="utf-8") as f:
+            json.dump({"file": dfm, "edits": [{"old": "Form1", "new": "Form2"}]}, f)
+        r = run_tool(PAS_EDIT, [spec], self.project)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("binary DFM", r.stdout)
+        with open(dfm, "rb") as f:
+            self.assertEqual(f.read(), BINARY_DFM)
 
     def test_dfm_with_existing_utf8_can_get_ascii_additions(self):
         # IDE-saved DFMs can be UTF-8 with BOM and already contain non-ASCII text; adding ASCII must still work

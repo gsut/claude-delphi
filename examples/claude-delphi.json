@@ -10,5 +10,6 @@
   "date_format": "%Y-%m-%d",
   "measure_marker": "X-MEASURE",
   "dead_code_marker": "DEAD-CODE",
+  "warn_binary_dfm": true,
   "forbidden_patterns": []
 }

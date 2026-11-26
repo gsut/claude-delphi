@@ -80,7 +80,8 @@ each finding "already documented / new".
 **[8] Find the form, the button and its name from the opening path and the DFM; do not guess from names in code.**
 *Check:* from the user's action (`OnClick` / `OnExecute`) find which form is `Create`d; check for a second form with a
 similar name. Search run-time `Caption :=` / `Visible :=` assignments. When writing test steps, read the object's parent
-chain in the DFM (form → tab → panel), its `Caption` **and** its `Visible`.
+chain in the DFM (form → tab → panel), its `Caption` **and** its `Visible`. If a sibling covers the same area (two
+`alClient` controls, same position), show in code which one is hidden on that path: the one later in the DFM is drawn on top.
 
 **[9] Before asking for a test, build a reachability table; show that the branch really runs on the test record.**
 *Check:* for every button / menu that calls the changed routine, read the `Visible` / `Enabled` assignments; state the

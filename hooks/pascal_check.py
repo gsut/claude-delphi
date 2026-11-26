@@ -4,6 +4,7 @@
 #   3. Project-specific forbidden patterns ("forbidden_patterns" in the settings; e.g. BoolToStr(x, True)).
 #   4. If a signature pattern is set: two consecutive comment lines must not both end with today's signature
 #      (the signature belongs on the last line of an explanation only).
+#   5. A binary DFM among the changed files is reported (it cannot be read or edited as text; ask the developer to convert it).
 # Only NEW violations are reported: counts are compared with the file's committed (HEAD) version, so existing legacy code
 # does not create noise. The hook never touches the file; it only reports (PostToolUse "block" = feedback to Claude).
 # Settings: $CLAUDE_PROJECT_DIR/.claude/claude-delphi.json (defaults below if missing).
@@ -107,13 +108,23 @@ def head_version(path):
     return git(["show", "HEAD:./" + os.path.basename(path)], folder)   # empty for a new file
 
 
+def is_binary_dfm(head):
+    # same rule as tools/dfm_text_check.py (hooks do not import from tools/)
+    return head.startswith(b"TPF0") or (head[:1] == b"\xff" and b"TPF0" in head[:512])
+
+
 def check(path, s):
     try:
         data = open(path, "rb").read()
     except OSError:
         return []
+    name = os.path.basename(path)
+    if path.lower().endswith(".dfm") and is_binary_dfm(data[:512]):
+        return ["%s is a binary DFM: it cannot be read or edited as text. Do not change it; ask the developer to convert it "
+                "to text (IDE: right-click the form > Text DFM, save; or Delphi's bin\\convert.exe -i -t). "
+                "tools/dfm_text_check.py lists all binary DFMs." % name]
     old = head_version(path)
-    name, problems = os.path.basename(path), []
+    problems = []
     if bare_lf(data) > bare_lf(old):
         problems.append("%s: %d lines end with a bare LF (%d in the committed version); line endings must be CRLF"
                         % (name, bare_lf(data), bare_lf(old)))

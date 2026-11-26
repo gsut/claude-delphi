@@ -2,7 +2,7 @@ import datetime
 import os
 import unittest
 
-from helpers import TempProject, run_hook
+from helpers import BINARY_DFM, TEXT_DFM, TempProject, run_hook
 
 SETTINGS = {
     "source_encoding": "cp1254",
@@ -44,6 +44,22 @@ class PascalCheckTest(unittest.TestCase):
         today = datetime.date.today().strftime("%Y-%m-%d")
         text = "unit Unit1;\r\n// why it changed\r\n// more reasoning. AB - %s\r\nend.\r\n" % today
         self.assertEqual(self.check(text.encode("cp1254")), "")
+
+    def test_binary_dfm_reported(self):
+        path = os.path.join(self.project.dir, "Form1.dfm")
+        with open(path, "wb") as f:
+            f.write(BINARY_DFM)
+        out = run_hook("pascal_check.py", {"tool_name": "Write", "tool_input": {"file_path": path},
+                                           "cwd": self.project.dir}, self.project)
+        self.assertIn("binary DFM", (out or {}).get("reason", ""))
+
+    def test_text_dfm_is_silent(self):
+        path = os.path.join(self.project.dir, "Form2.dfm")
+        with open(path, "wb") as f:
+            f.write(TEXT_DFM)
+        out = run_hook("pascal_check.py", {"tool_name": "Write", "tool_input": {"file_path": path},
+                                           "cwd": self.project.dir}, self.project)
+        self.assertIsNone(out)
 
     def test_non_pascal_files_ignored(self):
         path = os.path.join(self.project.dir, "notes.txt")

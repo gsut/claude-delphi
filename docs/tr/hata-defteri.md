@@ -82,7 +82,8 @@ vardı / yeni" diye ayrılır.
 **[8] Formu, düğmeyi ve adını açılış yolundan ve DFM'den bul; koddaki addan tahmin etme.**
 *Kontrol:* kullanıcının eyleminden (`OnClick` / `OnExecute`) hangi formun `Create` edildiği bulunur; adı benzeyen ikinci
 form var mı bakılır. Çalışma anındaki `Caption :=` / `Visible :=` atamaları aranır. Test adımı yazarken nesnenin DFM'deki
-üst zinciri (form → sekme → panel), `Caption`'ı **ve** `Visible`'ı okunur.
+üst zinciri (form → sekme → panel), `Caption`'ı **ve** `Visible`'ı okunur. Aynı yeri kaplayan bir kardeş varsa (iki `alClient`,
+aynı konum) o yolda hangisinin gizlendiği kodda gösterilir: DFM'de sonra gelen üstte çizilir.
 
 **[9] Test istemeden önce erişilebilirlik tablosu; test kaydında dalın gerçekten çalıştığını göster.**
 *Kontrol:* değişen yordamın çağrıldığı her düğme / menü için `Visible` / `Enabled` atamaları okunur; koşul bayraklarının

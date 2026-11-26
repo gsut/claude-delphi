@@ -66,13 +66,16 @@ folders) live in `CLAUDE.local.md`, which is not committed.
 
 ## Tool checks and commands (`.claude\`, committed)
 
+- `hooks\session_check.py` — at session start, lists binary DFMs if the project has any. If it does, tell the developer in
+  the first answer and do not touch those files: they must be converted to text first (IDE: right-click the form > Text DFM).
 - `hooks\command_guard.py` — refuses inline Python, `sed -i` / redirection on protected files, write-access DB users,
   GitHub CLI commands that write.
-- `hooks\pascal_check.py` — reports new bare LFs, wrong encoding, project-specific forbidden patterns and double signatures
-  in changed Pascal / DFM files (compared with the committed version).
+- `hooks\pascal_check.py` — reports new bare LFs, wrong encoding, project-specific forbidden patterns, double signatures
+  and binary DFMs in changed Pascal / DFM files (compared with the committed version).
 - Tools (`tools\`): `pas_edit.py` (the only way Pascal / DFM files are edited), `pas_callers.py` (references and dead-code
   evidence), `dfm_field_check.py` / `dfm_field_usage.py` (DFM bindings), `pg_fingerprint.py` (before / after data diff),
-  `diff_routines.py` (change map: diff hunks → routines / DFM objects, checked against the plan).
+  `diff_routines.py` (change map: diff hunks → routines / DFM objects, checked against the plan), `dfm_text_check.py`
+  (binary DFM list).
 - Commands: `/build-check`, `/triage`, `/review`, `/multi-review`, `/close-out` (with the independent `closeout-auditor`
   agent before the commit).
 - A new mistake that a pattern can catch goes into these checks, not into the mistake log.

@@ -78,6 +78,11 @@ SAMPLE_PAS = (
 )
 
 
+# A binary DFM as the IDE writes it: a resource header (FF, type 0A 00, name, flags, size) followed by the "TPF0" stream.
+BINARY_DFM = (b"\xff\x0a\x00TFORM1\x00\x30\x10" + (19).to_bytes(4, "little") + b"TPF0\x06TForm1\x05Form1\x00\x00")
+TEXT_DFM = b"object Form1: TForm1\r\n  Caption = 'Form'\r\nend\r\n"
+
+
 def write_sample(folder, name="Sample.pas", text=SAMPLE_PAS, encoding="cp1254", crlf=True):
     path = os.path.join(folder, name)
     data = text.replace("\n", "\r\n") if crlf else text

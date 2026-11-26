@@ -39,6 +39,7 @@ Bu depodaki her bir kural, hook ve alt ajan; gerçek bir projede aylarca süren 
 | **Veritabanı Yan Etkilerini Tahmin Etme:** AI, bir tetikleyicinin (trigger) veya yordamın hangi tabloları etkilediğini koddan tahmin etmeye çalışır. | **`tools/pg_fingerprint.py`** — İşlem öncesi ve sonrası tüm tablolardaki satır özetlerini (hash) karşılaştırarak veritabanı etkisini kanıtlar. |
 | **Yapay Zekâ Onay Yanlılığı:** Alt ajan, ana ajanın planını sorgulamadan onaylar. | **`/review` & `/multi-review` skill'leri** — Alt ajanlara planın sonucunu göstermeden yalnızca kod değişikliğini (diff) kör olarak inceletir. |
 | **Yarım Kalan veya Kapsam Dışı İşler:** AI planın bir kısmını atlar veya ilgisiz yordamlara dokunur. | **`/close-out` + `tools/diff_routines.py`** — `git diff` çıktısını Pascal yordamlarına/DFM nesnelerine eşler ve onaylı planla birebir karşılaştırır. |
+| **İkili (binary) DFM'ler:** İkili kaydedilmiş eski formları AI okuyamaz; satır sonu kuralları da onları bozar. | **`hooks/session_check.py`** + **`tools/dfm_text_check.py`** — Her oturum başında uyarır ve listeler; metne çevrilene kadar `pas_edit.py` dokunmayı reddeder. |
 | **Aynı Hataları Tekrarlama:** `CLAUDE.md` dosyası zamanla okunması imkânsız dev bir metne dönüşür. | **`docs/tr/hata-defteri.md`** — Her hatanın kısa bir **Kural + Otomatik Kontrol** maddesine dönüştüğü yapılandırılmış hata defteri. |
 
 ---
@@ -53,12 +54,20 @@ Bu depodaki her bir kural, hook ve alt ajan; gerçek bir projede aylarca süren 
 
 ---
 
+## 🚀 Başlarken
+
+Gereksinimler, adım adım kurulum, `claude-delphi.json`'daki her ayar, yerelleştirme, veritabanı notları ve bilinen sınırlar:
+**[kurulum.md](kurulum.md)**. İlk adımla başlayın: ikili DFM denetimi.
+
+---
+
 ## 📦 Depo Yapısı
 
 ```text
 ├── hooks/
+│   ├── session_check.py      # SessionStart: Projede ikili DFM varsa (Claude aracılığıyla) uyarır
 │   ├── command_guard.py      # PreToolUse: sed -i, satır içi Python, yazma yetkili DB kullanıcıları ve gh yazma komutlarını engeller
-│   └── pascal_check.py       # PostToolUse: Kodlama (CP125x), CRLF, yasaklı desenler ve yorum imzalarını denetler
+│   └── pascal_check.py       # PostToolUse: Kodlama (CP125x), CRLF, yasaklı desenler, yorum imzaları ve ikili DFM'leri denetler
 ├── build/
 │   ├── build.bat             # Delphi (.dproj) için MSBuild sarmalayıcısı
 │   └── summary.py            # Derleme hata ve uyarılarını kaydedilmiş taban (baseline) ile karşılaştırır
@@ -69,15 +78,21 @@ Bu depodaki her bir kural, hook ve alt ajan; gerçek bir projede aylarca süren 
 │   ├── dfm_field_check.py    # DFM bileşen alanlarının veri kümesinde (dataset) var olup olmadığını doğrular
 │   ├── dfm_field_usage.py    # Belirli veritabanı alanlarına bağlı DFM bileşenlerini listeler
 │   ├── pg_fingerprint.py     # İşlem öncesi/sonrası veritabanı kayıt parmak izi çıkarıcı (PostgreSQL)
-│   └── diff_routines.py      # git diff bloklarını Pascal yordamlarına ve DFM bileşen zincirlerine eşler
+│   ├── diff_routines.py      # git diff bloklarını Pascal yordamlarına ve DFM bileşen zincirlerine eşler
+│   └── dfm_text_check.py     # Metne çevrilmesi gereken ikili DFM'leri listeler
 ├── .claude/
 │   ├── skills/               # Özel iş akışları: /build-check, /triage, /review, /multi-review, /close-out
 │   └── agents/               # Uzman alt ajanlar: scope-counter, devils-advocate, closeout-auditor
 ├── docs/
+│   ├── installation.md       # Gereksinimler, kurulum, ayarlar, yerelleştirme, veritabanları, sınırlar (Türkçesi: tr/kurulum.md)
 │   ├── mistake-log.md        # Yöntem, şablon ve 20 başlangıç kuralı (Türkçesi: tr/hata-defteri.md)
 │   ├── delphi-pitfalls.md    # Tekrarlayan 26 Delphi VCL + SQL tuzağı (Türkçesi: tr/delphi-tuzaklari.md)
 │   ├── build-baseline.md     # Derleme tabanı yönetiminin ayrıntıları (Türkçesi: tr/derleme-tabani.md)
 │   ├── case-study.md         # Gerçek bir hata avının adım adım hikâyesi (Türkçesi: tr/vaka.md)
 │   └── tr/                   # Türkçe dokümantasyon
-├── examples/                 # Hazır CLAUDE.md, settings.json, claude-delphi.json ve salt okunur SQL şablonları
+├── examples/                 # Hazır CLAUDE.md, settings.json, claude-delphi.json, gitattributes (.gitattributes olarak kopyalanır) ve salt okunur SQL şablonları
 └── tests/                    # Windows ve Ubuntu üzerinde çalışan kapsamlı unittest paketi
+```
+
+Katkılar memnuniyetle karşılanır — bkz. [CONTRIBUTING.md](../../CONTRIBUTING.md) (İngilizce). Değişiklikler:
+[CHANGELOG.md](../../CHANGELOG.md). Lisans: [MIT](../../LICENSE).

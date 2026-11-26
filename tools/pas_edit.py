@@ -33,6 +33,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pascal_lex  # noqa: E402
+from dfm_text_check import HOW, is_binary_dfm  # noqa: E402
 
 # the diff contains source text (any code page); print it as UTF-8, not in the console's code page
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -80,6 +81,9 @@ def main():
     is_dfm = path.lower().endswith(".dfm")
     enc = spec.get("encoding") or project_encoding()
     raw = open(path, "rb").read()
+    if is_dfm and is_binary_dfm(raw[:512]):
+        refuse("%s is a binary DFM; it cannot be edited as text. Ask the developer to %s "
+               "(tools/dfm_text_check.py lists all of them)" % (path, HOW))
     if raw.startswith(b"\xef\xbb\xbf"):
         enc = "utf-8-sig"
     try:

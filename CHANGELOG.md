@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+- Mistake log [8] (English and Turkish): if a sibling covers the same area (two `alClient` controls), show in code which one
+  is hidden on that path — the one later in the DFM is drawn on top. From a real case: a whole feature was built on a grid
+  that a second, never-hidden `alClient` grid covered.
+- `examples/gitattributes` (copy to the project root as `.gitattributes`): Delphi sources stored with LF and always checked
+  out with CRLF, independent of each machine's `core.autocrlf`; binary Delphi files never converted. The file says what it
+  does not cover (a bare LF on disk until the next commit, the code page — `pascal_check.py` is still needed), the warning
+  about binary DFMs, and the one-time `git add --renormalize .`. Suggested on Reddit.
+- Binary DFMs (unreadable for Claude and the tools, corrupted by a `text` rule in `.gitattributes`):
+  - `tools/dfm_text_check.py` (new): lists binary DFMs (resource header + `TPF0`, or a bare `TPF0` stream), skips IDE
+    history folders, says how to convert (IDE "Text DFM", `convert.exe -i -t`); exit 1 if any. Never changes a file.
+  - `hooks/session_check.py` (new, SessionStart, matcher `startup`): if the project has binary DFMs, its plain stdout goes
+    into Claude's context and Claude tells the developer in the first answer. Setting `warn_binary_dfm` (default true);
+    the scan stops after 20 s on a very large tree. Wired in `examples/settings.json`.
+  - `pas_edit.py` refuses to edit a binary DFM; `pascal_check.py` reports one among changed files.
+  - 9 tests: `test_dfm_text_check.py` (3), `test_session_check.py` (3), `test_pas_edit.py` (1),
+    `test_pascal_check.py` (2, binary and text DFM). 56 in all.
+- `docs/installation.md` and `docs/tr/kurulum.md` (new): requirements, installation (now starting with the binary DFM
+  check and with a `.gitattributes` step), every `claude-delphi.json` setting, tests, localization, databases, limits —
+  the sections the shortened README of 26.11.2026 no longer carried. The README links to it ("Getting Started"); its
+  structure tree lists the new files and its code block is closed again.
+
 ## v0.3.0 — 26.11.2026
 
 The project's goal is now stated at the top of the README: **correctness of the work, not saving tokens.** This release
