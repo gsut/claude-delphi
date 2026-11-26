@@ -49,7 +49,9 @@ audits of the package itself.
 **Independence check:** a fresh install from the README into a throwaway project, with no access to the original project,
 ran the tests, tools and hooks; no leak of or dependency on the original project was found.
 
-**Tests:** 47 (was 32 at v0.1.0).
+**Tests:** 47 (was 32 at v0.1.0). `test_diff_routines.py` sets `core.autocrlf=false` in its temporary repository, so the
+results do not depend on the machine's Git settings (with `autocrlf=true`, as on GitHub's Windows runners, a line-ending-only
+change is no change at all).
 
 ## v0.2.0 — 24.11.2026
 

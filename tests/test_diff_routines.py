@@ -27,6 +27,9 @@ def git(project, *args):
 class DiffRoutinesTest(unittest.TestCase):
     def setUp(self):
         self.p = TempProject({"source_encoding": "cp1254"}, git=True)
+        # The tests must not depend on the machine's Git settings: with core.autocrlf=true (GitHub's Windows runners) a
+        # file that differs only in line endings is not a change at all, and the "line endings only" case never appears.
+        git(self.p, "config", "core.autocrlf", "false")
         write_sample(self.p.dir)
         write_sample(self.p.dir, "Form1.dfm", DFM, encoding="ascii")
         git(self.p, "add", ".")
