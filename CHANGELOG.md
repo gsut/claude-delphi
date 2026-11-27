@@ -1,12 +1,6 @@
 # Changelog
 
-## Unreleased
-
-- `pas_callers.py`: `.dpr` unit paths (`U in '..\U.pas'`) are written with `\`; on Linux / macOS that was no separator,
-  so units outside `--root` were not seen ("NO VERDICT" missing) and the "[not in .dpr]" marks were wrong. Found by the
-  Ubuntu CI run of v0.5.0 (`test_dpr_unit_outside_root`).
-
-## v0.5.0 — 27.11.2026
+## v0.5.1 — 27.11.2026
 
 An independent audit of the whole repository (consistency, limitations, reliability) closed safety gaps in the hooks
 (line endings in LF-storing repositories, the PowerShell tool, failing closed), tools that said "OK" when they should not,
@@ -191,7 +185,12 @@ assumptions into it and hands the [20] section to `devils-advocate`; `closeout-a
 - `test_agents.py` (new): every `.claude/agents/*.md` has frontmatter with only known keys (Claude Code ignores unknown ones
   silently), `name` equal to the file name, a `tools` line (without it the agent inherits every tool) listing only Read,
   Grep, Glob, Bash, and is used by a skill.
+- `pas_callers.py`: `.dpr` unit paths (`U in '..\U.pas'`) are written with `\`; on Linux / macOS that was no separator,
+  so units outside `--root` were not seen ("NO VERDICT" missing) and the "[not in .dpr]" marks were wrong. Found by the
+  Ubuntu CI run of v0.5.0 (`test_dpr_unit_outside_root`).
+  
 - Total: 133 (was 56 at v0.4.0).
+
 
 ## v0.4.0 — 26.11.2026
 
