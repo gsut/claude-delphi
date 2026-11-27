@@ -31,6 +31,7 @@ import json
 import os
 import sys
 
+sys.dont_write_bytecode = True   # no __pycache__ next to the tools in the user's project
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pascal_lex  # noqa: E402
 from dfm_text_check import HOW, is_binary_dfm  # noqa: E402

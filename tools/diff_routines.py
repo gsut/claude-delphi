@@ -23,6 +23,7 @@ import re
 import subprocess
 import sys
 
+sys.dont_write_bytecode = True   # no __pycache__ next to the tools in the user's project
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # find pascal_lex when run with -I too
 import pascal_lex  # noqa: E402
 

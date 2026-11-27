@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.2 — 27.11.2026
+
+From porting v0.5.1 to a real project:
+- Hooks and tools that import a sibling module (`hook_common`, `pascal_lex`, ...) set `sys.dont_write_bytecode`: every
+  hook call left a `__pycache__` folder in `.claude/hooks/`, which a project whose `.gitignore` lacks a general
+  `__pycache__/` line shows as untracked.
+- Installation, step 11: the PowerShell smoke test asked Claude to run `Get-Date` with a tool the deny rule removes from
+  the session entirely; now it asks whether the tool exists.
+
 ## v0.5.1 — 27.11.2026
 
 An independent audit of the whole repository (consistency, limitations, reliability) closed safety gaps in the hooks

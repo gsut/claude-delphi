@@ -28,6 +28,7 @@ import os
 import re
 import sys
 
+sys.dont_write_bytecode = True   # no __pycache__ next to the tools in the user's project
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pascal_lex as pl  # noqa: E402
 from dfm_text_check import is_binary_dfm  # noqa: E402

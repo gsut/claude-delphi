@@ -76,9 +76,10 @@ All paths below are relative to the project root (the folder of your `.dpr`, whi
     command substitution ..."), and the same command run by Claude itself must pass. Use a command that only reads: the
     agent's own instructions forbid writing, so with `touch` it refuses before the hook is ever asked and the test proves
     nothing. If the agent prints the commit line, your Claude Code does not send `agent_type` to hooks (measured present
-    in 2.1.332) and only the `git status` / plan hash check in the skills remains. On Windows, finally ask Claude to run
-    `Get-Date` with its PowerShell tool: it must be refused by the deny rule (if you allowed PowerShell, ask for
-    `'x' | Set-Content probe.pas` instead: the hook must refuse it). Repeat these tests after updating Claude Code or
+    in 2.1.332) and only the `git status` / plan hash check in the skills remains. On Windows, finally ask Claude whether it
+    has a PowerShell tool: with the deny rule it must say no (a bare tool name in `deny` removes the tool from the
+    session, so nothing can be tried with it). If you allowed PowerShell, ask for `'x' | Set-Content probe.pas` instead:
+    the hook must refuse it. Repeat these tests after updating Claude Code or
     Python, and after editing `.claude/settings.json` or `.claude/claude-delphi.json`.
 
 `pas_edit.py`, `diff_routines.py` and `closeout_check.py` find `.claude/claude-delphi.json` through `$CLAUDE_PROJECT_DIR`, else by walking up

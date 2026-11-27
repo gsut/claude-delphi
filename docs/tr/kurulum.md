@@ -78,8 +78,9 @@ Aşağıdaki yollar proje köküne göredir (`.dpr`'nin bulunduğu dizin; bir Gi
     kullanın: ajanın kendi talimatı yazmayı yasakladığı için `touch` ile hook'a hiç sorulmadan reddeder ve test bir şey
     kanıtlamaz. Ajan commit satırını yazdırırsa Claude Code sürümünüz hook'lara `agent_type` göndermiyordur
     (2.1.332'de geldiği ölçüldü); o zaman yalnız skill'lerdeki `git status` / plan özeti kontrolü kalır. Windows'ta son
-    olarak Claude'dan PowerShell aracıyla `Get-Date` çalıştırmasını isteyin: yasak kuralı reddetmeli (PowerShell'e izin
-    verdiyseniz bunun yerine `'x' | Set-Content probe.pas` isteyin: hook reddetmeli). Bu testleri Claude Code ya da Python
+    olarak Claude'a PowerShell aracı olup olmadığını sorun: yasak kuralıyla "yok" demeli (`deny`'daki çıplak araç adı aracı
+    oturumdan tamamen kaldırır, onunla hiçbir şey denenemez). PowerShell'e izin verdiyseniz bunun yerine
+    `'x' | Set-Content probe.pas` isteyin: hook reddetmeli. Bu testleri Claude Code ya da Python
     güncellendikten, `.claude/settings.json` ya da `.claude/claude-delphi.json` düzenlendikten sonra tekrarlayın.
 
 `pas_edit.py`, `diff_routines.py` ve `closeout_check.py` `.claude/claude-delphi.json`'ı `$CLAUDE_PROJECT_DIR`'dan, yoksa bulunduğu dizinden

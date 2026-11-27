@@ -26,6 +26,7 @@ import re
 import shlex
 import sys
 
+sys.dont_write_bytecode = True   # no __pycache__ next to the hooks in the user's project
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # python -I leaves the script's folder off sys.path
 import hook_common  # noqa: E402
 
