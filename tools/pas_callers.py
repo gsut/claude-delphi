@@ -52,7 +52,8 @@ def dpr_units(dpr, root):
     text = read(dpr)
     out = set()
     for m in re.finditer(r"\b[\w.]+\s+in\s+'([^']+)'", text, re.I):
-        out.add(os.path.normcase(os.path.normpath(os.path.join(os.path.dirname(dpr), m.group(1)))))
+        path = m.group(1).replace("\\", os.sep)   # .dpr paths are written with '\'; on Linux / macOS that is no separator
+        out.add(os.path.normcase(os.path.normpath(os.path.join(os.path.dirname(dpr), path))))
     out.add(os.path.normcase(os.path.normpath(dpr)))
     return out
 

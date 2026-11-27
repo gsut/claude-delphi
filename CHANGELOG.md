@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `pas_callers.py`: `.dpr` unit paths (`U in '..\U.pas'`) are written with `\`; on Linux / macOS that was no separator,
+  so units outside `--root` were not seen ("NO VERDICT" missing) and the "[not in .dpr]" marks were wrong. Found by the
+  Ubuntu CI run of v0.5.0 (`test_dpr_unit_outside_root`).
+
 ## v0.5.0 — 27.11.2026
 
 An independent audit of the whole repository (consistency, limitations, reliability) closed safety gaps in the hooks
