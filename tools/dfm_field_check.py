@@ -1,7 +1,7 @@
 """DFM binding check: does every DataField / FieldName of a control or grid column bound to a DataSource exist as a
 persistent field in that DataSource's dataset?
 
-Usage: python dfm_field_check.py --root <project dir> [part of DataSource name ...]   (no part = all)
+Usage: python dfm_field_check.py --root <project dir> [--exclude <regex>] [part of DataSource name ...]   (no part = all)
 Limits: datasets without persistent fields are skipped; DataSources changed at run time (in code) are not visible.
 Bindings of the form "Module.DsName" are resolved when the data module is another DFM.
 """
@@ -14,7 +14,7 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 ap = argparse.ArgumentParser()
 ap.add_argument("--root", default=os.getcwd())
-ap.add_argument("--exclude", default=r"__history|__recovery|/backup/", help="regex of paths to skip")
+ap.add_argument("--exclude", default=r"__history|__recovery|[\\/]backup[\\/]", help="regex of paths to skip")
 ap.add_argument("filter", nargs="*")
 arg = ap.parse_args()
 ROOT = os.path.abspath(arg.root).replace("\\", "/").rstrip("/") + "/"
@@ -61,7 +61,7 @@ for mod, (p, objs) in modules.items():
                 d = ds[0].lower()
                 source[(mod, o["name"].lower())] = tuple(d.split(".")) if "." in d else (mod, d)
 
-missing = checked = 0
+missing = checked = skipped = 0
 for mod, (p, objs) in modules.items():
     for o in objs:
         src = [x.split("=")[1].strip() for x in o["props"] if re.match(r"(DataBinding\.)?DataSource =", x)]
@@ -73,6 +73,7 @@ for mod, (p, objs) in modules.items():
             continue
         ds = source.get(k)
         if ds is None or ds not in fields:
+            skipped += 1                    # DataSource not resolved, or its dataset has no persistent fields
             continue
         for x in o["props"]:
             m = re.match(r"(DataBinding\.DataField|DataField|FieldName) = '(.*)'", x)
@@ -83,5 +84,6 @@ for mod, (p, objs) in modules.items():
                 if f.lower() not in fields[ds]:
                     missing += 1
                     print(f'MISSING  {os.path.relpath(p, ROOT)}: {o["name"]} ({o["cls"]}) {m.group(1)} = {f}  ->  {src[0]} / {ds[1]}')
-print(f"{checked} bindings checked, {missing} missing fields")
+print(f"{checked} bindings checked, {missing} missing fields; {skipped} bound controls not checked (DataSource not "
+      f"resolved, or its dataset has no persistent fields: \"0 missing\" covers only the checked ones)")
 sys.exit(1 if missing else 0)

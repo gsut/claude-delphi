@@ -88,7 +88,9 @@ aynı konum) o yolda hangisinin gizlendiği kodda gösterilir: DFM'de sonra gele
 **[9] Test istemeden önce erişilebilirlik tablosu; test kaydında dalın gerçekten çalıştığını göster.**
 *Kontrol:* değişen yordamın çağrıldığı her düğme / menü için `Visible` / `Enabled` atamaları okunur; koşul bayraklarının
 anlamı adından değil atandığı yerden söylenir (`grep -n "<Bayrak> *:="`). "Aynı çıktı" ancak değişen satırın o kayıtta
-çalıştığı gösterildikten sonra kabul edilir. Tetikleyici bayrağı açan yer yoksa yol "erişilemez" yazılır.
+çalıştığı gösterildikten sonra kabul edilir. Tetikleyici bayrağı açan yer yoksa yol "erişilemez" yazılır. Değişiklik
+yeni bir yazma yolu açıyorsa (düzenlenebilir hücre, veri yazan menü ya da pencere), tabloya projenin salt okunur /
+korumalı modları için bir satır eklenir: o yolda ne olur, komşu ekranın koruması aynı kuralı uyguluyor mu?
 
 ### Kapsam ve genelleme
 
@@ -149,6 +151,9 @@ garantiye alınır (`LIMIT 1`, kısıt, koşul).
 - Izgaranın `OnGetCellParams`'ında verilen hücre kilidi (`Params.ReadOnly`) `EditMode = True` çağrısında da verilir: EhLib
   düzenleme iznini tam öyle soruyor (`TAxisBarEh.CanModify`). `if EditMode then Exit` yalnız renk ve metin için. Test
   adımına "kilitli hücreye çift tıkla, yazmayı dene" girer.
+- Bir bileşen özelliğini silerken / değiştirirken ya da bir olay bağlarken, parçanın görünürlüğünün o özelliğe bağlı olup
+  olmadığına bileşen kaynağından bakılır (EhLib sütununun `Visible`'ı açıkça verilmemiş `EditButton`'ı yalnız sütunun
+  açılır formu varsa görünür, `DefaultVisible`). Bağlanan bir düğme, ekranda görülmeden test talimatına girmez.
 
 **[17] Derlemenin yakaladığı iki tuzak.** Delphi yorumunda `{ }` iç içe olmaz (içinde `{` geçen yorum `//` ile); anonim
 metot iç içe yordamı, `var` / `out` parametreyi ve `Result`'ı yakalayamaz (E2555). Ayrıntı: `delphi-tuzaklari.md` §26.

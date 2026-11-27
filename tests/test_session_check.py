@@ -24,6 +24,13 @@ class SessionCheckTest(unittest.TestCase):
         with open(path, "wb") as f:
             f.write(data)
 
+    def test_broken_settings_are_announced(self):
+        self.project = TempProject({})
+        self.put(os.path.join(".claude", "claude-delphi.json"), b'{"warn_binary_dfm": true,}')
+        r = run_session(self.project)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("cannot be read", r.stdout)
+
     def test_silent_when_all_text(self):
         self.project = TempProject({})
         self.put("Form1.dfm", TEXT_DFM)

@@ -1,6 +1,6 @@
 ---
 name: scope-counter
-description: Independently counts the scope of a change plan in a Delphi project (calls, field accesses, DFM bindings, name strings). Called by /multi-review.
+description: Independently counts the scope of a change plan in a Delphi project (calls, field accesses, DFM bindings, name strings). Called by /review and /multi-review.
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -3,25 +3,17 @@
 # binary one. If the project has binary DFMs, a note is printed; Claude Code adds a SessionStart hook's plain stdout to
 # Claude's context, so Claude tells the developer in its first answer. Nothing is printed when all DFMs are text.
 # The hook never changes a file. Settings: $CLAUDE_PROJECT_DIR/.claude/claude-delphi.json ("warn_binary_dfm", default true).
-import json
 import os
 import sys
 import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # python -I leaves the script's folder off sys.path
+import hook_common  # noqa: E402
 
 DEFAULTS = {"warn_binary_dfm": True}
 SKIP_DIRS = {".git", ".svn", ".hg", "__history", "__recovery", "node_modules"}
 TIME_LIMIT_SEC = 20                  # a very large tree is cut short rather than delaying the session
 SHOW = 10
-
-
-def settings(root):
-    s = dict(DEFAULTS)
-    try:
-        with open(os.path.join(root, ".claude", "claude-delphi.json"), encoding="utf-8") as f:
-            s.update(json.load(f))
-    except (OSError, ValueError):
-        pass
-    return s
 
 
 def is_binary_dfm(head):
@@ -51,17 +43,24 @@ def binary_dfms(root):
 
 def main():
     try:
-        data = json.load(sys.stdin)
-    except Exception:
+        data = hook_common.read_input()
+    except ValueError:
         data = {}
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     root = os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd()
-    if not settings(root).get("warn_binary_dfm", True):
+    s, problem = hook_common.load_settings(DEFAULTS, root)
+    if problem:
+        print("claude-delphi session check: %s. Tell the developer in your first answer: the hooks refuse every shell "
+              "command until it is fixed." % problem)
+    if not s.get("warn_binary_dfm", True):
         return 0
     found, complete = binary_dfms(root)
     if not found:
+        if not complete:
+            print("claude-delphi session check: the binary DFM scan was cut short after %d s and found none so far; that "
+                  "does not mean there are none. Run python tools/dfm_text_check.py once." % TIME_LIMIT_SEC)
         return 0
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
     lines = ["claude-delphi session check: the project has %d binary DFM file(s)%s. Tell the developer in your first answer, "
              "before any other work: binary DFMs cannot be read or edited as text by Claude or the tools, and a text "
              "rule in .gitattributes would corrupt them. Ask them to convert them to text (IDE: open the form, right-click "

@@ -13,35 +13,23 @@ only what will change, not the plan's conclusion (an agent handed a hypothesis t
 ## 1. Write your own count first
 
 Before starting the review, write your own scope count on four axes (for comparison): calls, field accesses, DFM bindings,
-name strings. For calls, DFM bindings and name strings `python tools/pas_callers.py <Name>` gives a first list.
+name strings. For calls, DFM bindings and name strings `python tools/pas_callers.py <Name>` gives a first list. Put it
+into the plan file's Assumptions section (`<!-- plan:assumptions -->`).
 
 ## 2. Start the agent
 
-One general-purpose agent, read-only. The task text contains the following and **nothing else**:
+Start the `scope-counter` agent (`.claude/agents/`). Its definition holds the rules, the four axes (calls, field accesses
+and order dependence, DFM bindings, name strings), the extra questions and the report format; do not repeat them in the
+task. The task text contains the following and **nothing else**:
 
 - The object(s) that will change: routine / dataset / form name and file.
 - A description of the change (what is moved, removed, merged) — without judgement sentences such as "we think it is safe".
-- Where to read: project root, component sources, the code pitfalls document.
-- Rules: change no file; quote every finding as `file:line`; mark anything uncertain as "not verified".
+- Where to read, if it is not the project root: component sources, the code pitfalls document.
 
-The four axes requested:
-
-1. **Calls:** every call / use of the object (all spellings of the name, case-insensitive, including ones ending a line);
-   copy units not in the `.dpr` listed separately.
-2. **Field accesses and order dependence:** field reads / writes in the same routine after a call that changes position
-   (`Locate`, `Open`, `Close`, filter); reads between the old and new place of a moved step; master-detail datasets
-   (DFM `MasterSource`).
-3. **DFM bindings:** `DataSource` / `DataSet` / `MasterSource` = … lines and run-time assignments (`DataSource :=`); does
-   the field exist in the new dataset, with the same class?
-4. **Name strings:** places that carry the name as text — `FindComponent`, `FieldByName('…')`, report templates, database
-   functions and views.
-
-Extra questions:
-
-- Did the removed / conditioned call also do work when the condition is **not** met (lines before an early exit)?
-- **Every** caller that opens the changed routine or form (`T<Form>.Create`); should the behaviour change for all of them?
-- Does temporarily changed state (filter, `Enabled`, a global) return to the state it was found in?
-- Do statements writing to multi-tenant / per-file tables include the tenant condition?
+No assumption list and no conclusion of the plan. The agent is read-only by instruction and by `hooks/command_guard.py`
+(rule 6; a trip wire, not a boundary). Before starting it, note `git hash-object <plan file>`; afterwards check that it
+is unchanged and that `git status --short` shows no unexpected change (it does not see ignored folders such as the
+personal folder, hence the hash).
 
 ## 3. Compare
 
@@ -56,4 +44,15 @@ Put the agent's findings next to your own count:
 ## 4. Result
 
 Short report to the developer: confirmed pitfalls (risk + proposed safeguard), steps added to / changed in the plan, cases
-added to the test list, open "not verified" items. If the plan changes, get approval again before writing code.
+added to the test list, open "not verified" items. If the plan changes, read its [20] table (`plan:removed-calls`)
+again — a plan that grew under review often removes or narrows a call it did not before — and get approval again
+before writing code.
+
+Add one row to the review log next to the plan file (`<id>-plan.md` → `<id>-reviews.md`; copy
+`.claude/templates/reviews.md` if it does not exist yet): step `review`, the round number, agent `scope-counter`,
+Findings = differences between your count and its count, plus findings in its answers to the extra questions, after
+you opened them in step 3.
+
+**At most two review rounds per plan** (`/review` and `/multi-review` together). If the changed plan is reviewed again and
+that second review changes it once more, do not start a third: take the open findings to the developer and go back to
+the hypothesis. A plan that keeps moving under review usually rests on a wrong assumption, not on a missing step.

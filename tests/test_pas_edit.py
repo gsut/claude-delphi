@@ -29,6 +29,16 @@ class PasEditTest(unittest.TestCase):
         with open(self.path, "rb") as f:
             return f.read()
 
+    def test_routine_with_forward_declaration(self):
+        # the forward declaration used to count as a second routine of the same name and the edit was refused
+        self.path = write_sample(self.project.dir, "Fwd.pas",
+                                 "unit Fwd;\ninterface\nimplementation\nprocedure Helper; forward;\n"
+                                 "procedure Main;\nbegin\n  Helper;\nend;\n"
+                                 "procedure Helper;\nbegin\n  X := 1;\nend;\nend.\n")
+        r = self.edit([{"old": "  X := 1;\n", "new": "  X := 2;\n", "routine": "Helper"}])
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn(b"X := 2;", self.after())
+
     def test_ambiguous_anchor_refused(self):
         r = self.edit([{"old": ANCHOR, "new": "x\n"}])
         self.assertEqual(r.returncode, 1)

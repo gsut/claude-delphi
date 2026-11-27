@@ -14,11 +14,13 @@ Show every fix line in today's source with `grep`. If it was commented out or re
 
 ## 2. Nothing left behind
 
-- Temporary measurement lines: `grep -rn "<measure marker>" --include=*.pas .` (marker from `.claude/claude-delphi.json`,
-  default `X-MEASURE`) → 0 when the work is finished.
+- Mechanical checks: `python tools/closeout_check.py` (if the work is already committed: `--base <commit before the job>`).
+  It checks that no measure-marker line is left, no `.bak` file exists, no `CreateForm` line was added to the `.dpr`, new
+  forms are registered in the `.dpr` / `.dproj`, the last build is newer than the last change, and it notes a changed
+  data module. Every FAIL is fixed, or written into the report with the reason it stays; NOTE lines go to step 5. Copy the
+  tool's result lines into the report; do not redo these checks by hand.
+- The build log being newer is not the result: the last `/build-check` must also have reported 0 errors, 0 new warnings.
 - Fix comments: every block starts with why it changed; the signature (initials + date) is on the last line only.
-- A build was run after the last Pascal change (`/build-check`): 0 errors, 0 new warnings.
-- No `.bak` file was created; no unwanted `CreateForm` in the `.dpr`.
 - Every removed / narrowed / conditioned call is in the plan's "what the old call also did" table (mistake log [20]); if
   not, fill it now and add a test step for each row to step 5.
 
@@ -29,11 +31,18 @@ whether something broke. **Done before the commit**; if the work is already comm
 range. It costs a few minutes and tokens on purpose: in the project this comes from, it caught six real bugs in one
 fifteen-file change before the commit, none of which the session's own checks had found.
 
+**No file changes while the audit runs**: the map of step 1 and the agent must see the same tree. Documents are
+updated in step 4, after the audit; a document listed in the plan's Scope therefore shows up in step 1's "not changed"
+list, which is expected. If something must change during the audit (a finding is fixed), the audit runs again on the
+new tree.
+
 1. **Change map:** `python tools/diff_routines.py --plan <plan file>` (if committed: `--commit <rev>` or `--rev A..B`).
-   It maps every hunk to a routine / DFM object and marks names that do not occur in the plan as "NOT IN PLAN". Read the
-   map yourself too: note which "NOT IN PLAN" lines you can already explain.
+   It maps every hunk to a routine / DFM object and marks names that do not occur in the plan as "NOT IN PLAN" (for a
+   plan written from `.claude/templates/plan.md`, only its Plan items and Scope sections count), and ends with the
+   other direction: the Scope entries no change touched (a forgotten item, a contingency written in the wrong section,
+   or a document still to update in step 4). Read the map yourself too: note which lines you can already explain.
 2. **Agent:** `closeout-auditor` (`.claude/agents/`). The task text contains **only**:
-   - the approved plan's file (the plan written down before coding, e.g. `plans/<id>-plan.md` in the personal folder);
+   - the approved plan's file (written before coding, `/triage` step 7: `<personal folder>/plans/<id>-plan.md`);
    - how to get the diff (working tree, or commit / range) and the output of step 1;
    - the request document and its attachments, if any.
 
@@ -43,9 +52,14 @@ fifteen-file change before the commit, none of which the session's own checks ha
 3. **Verification (mistake log [6]):** open every finding at its `file:line` yourself and accept or reject it; one line
    of reason for a rejection. A finding you cannot open goes to the developer as "reported by the audit, not verified".
    The agent fixes nothing; the fix of an accepted finding is asked of the developer. A clean audit does not replace
-   sections 1, 2 and 3 of this skill. Afterwards, `git status --short` shows no unexpected change in the working tree.
-4. **Measurement (optional):** a row in a table (date, job, findings, accepted, real bugs, bugs the developer found after
-   the commit) shows over time whether the audit pays off, and whether small jobs need it.
+   sections 1, 2 and 3 of this skill. The agent is read-only by instruction and by `hooks/command_guard.py` (rule 6; a
+   trip wire, not a boundary): note `git hash-object <plan file>` before starting it, and afterwards check that it is
+   unchanged and that `git status --short` shows no unexpected change (it does not see the ignored personal folder).
+4. **Review log:** after step 3, add a row to the review log next to the plan file (`<id>-plan.md` → `<id>-reviews.md`;
+   copy `.claude/templates/reviews.md` if it does not exist yet): today's date, step `close-out`, agent
+   `closeout-auditor`, Findings = rows of its index, Accepted / Accepted critical / Not opened from your verification.
+   Over time the log shows whether the audit pays off, and whether small jobs need it; a regression found later is added
+   as an `after-close-out` row (`/triage` step 5). Without a plan file there is no log; say so in the report.
 
 ## 3. Was each symptom explained by its own measurement
 
@@ -63,11 +77,15 @@ measurement is marked "explained from code, not verified in data".
 
 ## 5. Left for the developer
 
-- Test steps (which record type, which menu path; menu names from the DFM `Caption`, `Visible` checked).
+- Test steps (which record type, which menu path; menu names from the DFM `Caption`, `Visible` checked), starting from
+  the test steps of the plan's [20] table; written into the plan file's Test steps section (`<!-- plan:tests -->`) too.
 - If there is a database script: file name and a note about the version number.
 - If a data module changed: "close and reopen the project".
 
 ## 6. Report (these headings, short)
+
+If there is a plan file, run `python tools/closeout_check.py --plan <plan file>` once more before writing the report
+(with `--base` as in step 2): the `review-log` line must be OK; copy the result lines into heading 3 (the audit in short).
 
 1. **How it was done** — file, routine, measurement, evidence.
 2. **What the actual bug was** — root cause in one sentence; since when.

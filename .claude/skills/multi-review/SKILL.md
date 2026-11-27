@@ -16,18 +16,22 @@ small single-routine bug fix. For bug fixes, review the fix plan after the measu
 
 Before starting the agents, write your own scope count on four axes: calls, field accesses, DFM bindings, name strings.
 For calls, DFM bindings and name strings `python tools/pas_callers.py <Name>` gives a first list.
-Also list the plan's assumptions one by one ("the table has one row per record", "this form only opens from X").
+Also list the plan's assumptions one by one ("the table has one row per record", "this form only opens from X") and
+write them, together with your scope count, into the plan file's Assumptions section (`<!-- plan:assumptions -->`, see
+`/triage` step 7).
 
 ## 2. Start both agents in parallel, in one message
 
 - `scope-counter`: the task text contains only the object(s) that will change (routine / dataset / form and file) and the
   description of the change (what is moved, removed, merged). **No assumption list and no conclusion of the plan.**
 - `devils-advocate`: the same description + the assumption list from step 1 + the plan's "removed / narrowed call → what
-  the old call also did" table (mistake log [20]; if there is none, write "no table") + the path of the request document,
-  if any. No judgement sentences ("we think it is safe").
+  the old call also did" table (mistake log [20]; the plan file's `plan:removed-calls` section; if there is no plan file
+  or table, write "no table") + the path of the request document, if any. No judgement sentences ("we think it is safe").
 
-Both agents are instructed to be read-only; only the instruction keeps them from using Bash to write. Afterwards, check with
-`git status --short` that the working tree has no unexpected changes.
+Both agents are read-only by instruction and by `hooks/command_guard.py` (rule 6 refuses the usual ways a Bash command
+writes; a trip wire, not a boundary). Before starting them, note `git hash-object <plan file>`; afterwards check that it
+is unchanged and that `git status --short` shows no unexpected change (it does not see ignored folders such as the
+personal folder, hence the hash).
 
 ## 3. Compare and verify
 
@@ -45,9 +49,19 @@ Both agents are instructed to be read-only; only the instruction keeps them from
 ## 4. Result
 
 Short report to the developer: accepted findings (risk + step added to the plan), cases added to the test list, rejected
-ones (one-line reason), open "not verified" items. If the plan changes, get approval again before writing code.
+ones (one-line reason), open "not verified" items. If the plan changes, read its [20] table (`plan:removed-calls`)
+again — a plan that grew under review often removes or narrows a call it did not before — and get approval again
+before writing code.
 
-## 5. Measurement (optional)
+**At most two review rounds per plan** (`/review` and `/multi-review` together). If the changed plan is reviewed again and
+that second review changes it once more, do not start a third: take the open findings to the developer and go back to
+the hypothesis. A plan that keeps moving under review usually rests on a wrong assumption, not on a missing step.
 
-To see whether the review pays off, add a row to a table: date, subject, scope differences (accepted / total), advocate
-findings (accepted / total, number critical). If a problem not in the plan appears after implementation, note it on the same row.
+## 5. Review log
+
+After step 3, add one row per agent to the review log next to the plan file (`<id>-plan.md` → `<id>-reviews.md`; copy
+`.claude/templates/reviews.md` if it does not exist yet; the column meanings are in the template): step `multi-review`,
+the round number, `scope-counter` (Findings = differences between your count and its count, plus findings in its
+answers to the extra questions) and `devils-advocate`
+(Findings = rows of its index). The counts come from your step 3 tables, after you opened the evidence, not from the
+agents' reports. Write the file with Write / Edit.

@@ -25,6 +25,11 @@ break.
 
 ## Three questions
 
+If the plan file has `<!-- plan:... -->` section markers, the items are in `plan:items`; `plan:callers` lists callers that
+were meant to stay unchanged, `plan:contingency` holds steps carried out only under a condition (not implementing one
+is not "missing"; implementing one without its condition being met is a finding), and `plan:removed-calls` is the
+"what the old call also did" table. The change map ends with the Scope entries no change touched: check each one.
+
 1. **Was the plan carried out?** For each item of the plan, the hunk that implements it (`file:line`). None → "missing";
    partly → what is missing. Where an item says to apply the same change in several places, count the places one by one
    (forgetting one of two copies is a classic).
@@ -51,5 +56,14 @@ break.
 2. **Touches outside the plan:** one per line, `file:line — what changed`. If none, "none" and how you checked.
 3. **Breakage candidates:** one per line, `file:line — scenario (which record type / which path) — evidence`.
 4. **Not verified:** what you looked at but could not conclude.
+5. **Index:** one row for every plan item that is partial / missing, every touch outside the plan and every breakage
+   candidate, in that order:
+
+   | # | Severity | file:line | Finding in one line |
+   |---|---|---|---|
+
+   Severity is exactly `critical` (wrong amount / data loss), `medium` (wrong screen, missing branch, missing plan
+   item) or `minor`. One line per cell; a `|` inside a cell is written `\|`. The index only points at the findings; the
+   evidence stays in sections 1–3. Nothing to list → no index.
 
 Do not write verdicts ("safe", "no problem", "done"); findings only.

@@ -15,14 +15,21 @@ Output, dcu files and logs go only under `build\`; the developer's exe / dcu fil
 4. Acceptance: **0 errors and 0 "new warnings/hints vs baseline".**
    - On errors: open the file and line of the first error, fix it, build again. Later errors are often caused by the first.
    - On new warnings: either remove them or state in the report why they stay; never add them to the baseline on your own.
-5. Report (short): what was built, number of errors, number of new warnings, and whichever notes below apply.
+   - **At most three fix-and-build rounds per job.** If the third build still has errors or new warnings, stop: report
+     the remaining messages, what each round changed and why it did not help, and ask the developer. Do not start a
+     fourth round, and do not get under the limit by hiding a message (`{$WARN … OFF}`, `{$HINTS OFF}`, a new baseline,
+     commenting code out). Three failed rounds usually mean the change or its premise is wrong, not the last edit.
+5. Report (short): what was built, number of errors, number of new warnings, how many rounds it took, and whichever
+   notes below apply.
 
 ## Notes to add to the report
 
+`python tools/closeout_check.py` reports the first two mechanically (lines `data-module`, `createform`, `new-form`).
+
 - If a data module (`TDataModule`) unit changed: **"data module changed — close and reopen the project in Delphi"**
   (the IDE may compile an externally changed data module from its in-memory copy).
-- If a new form / unit was added: no unwanted `Application.CreateForm` line in the `.dpr` (`grep -n "CreateForm" *.dpr`);
-  the form name appears in the `.dpr` comment and in the `.dproj` `<Form>` tag.
+- If a new form / unit was added: no unwanted `Application.CreateForm` line in the `.dpr`; the form name appears in the
+  `.dpr` comment and in the `.dproj` `<Form>` tag.
 - A successful build does not mean the program was tried: the report says "built" and "tested" separately.
 
 ## Do not

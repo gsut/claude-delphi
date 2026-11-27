@@ -9,19 +9,24 @@ language, so the kind is taken from the message code, never from the word: E / F
 
 Comparison key (file, code, message); the line number is not part of the key because edits shift lines. If a key occurs
 more often than in the baseline, the surplus counts as new.
+
+A failed build always shows as an error: if MSBuild exits with a non-zero code and no error line was recognised (a
+message format this script does not know, a localized MSBuild error, msbuild not found), a generic error is counted.
+A baseline is saved only from a build without errors.
 Usage: summary.py <log> <baseline> <msbuild_exit_code> [baseline]
 """
 import re
 import sys
 from collections import Counter
 
-# "<file>(<line>): <localized kind words> <code>: <message> [<project>]"
+# "<file>(<line>[,<column>]): <localized kind words> <code>: <message> [<project>]"
 DELPHI = re.compile(
-    r"^(?P<file>.+?)\((?P<line>\d+)\):\s.*?\b(?P<code>[EFWH]\d{4}):\s(?P<msg>.*?)(?:\s\[[^\]]*\])?$"
+    r"^(?P<file>.+?)\((?P<line>\d+)(?:,\d+)?\):\s.*?\b(?P<code>[EFWH]\d{4}):\s(?P<msg>.*?)(?:\s\[[^\]]*\])?$"
 )
-# MSBuild / tool errors: "... error MSB1009: ..." ; the MSBuild canonical format keeps the "error" keyword, but match the code
-MSBUILD = re.compile(r"\b(?:error|fatal)\b.*?\b[A-Z]{2,}\d{3,}\s*:|\bMSB\d{4}\s*:", re.I)
-MSBUILD_WARNING = re.compile(r"\bwarning\b.*?\b[A-Z]{2,}\d{3,}\s*:", re.I)
+# MSBuild / tool errors with the English keyword: "... error MSB1009: ...". A localized MSBuild writes the kind in its own
+# language ("Warnung MSB4011", "Fehler MSB1009"); without the keyword the kind is unknown, so such a line is not counted
+# here — a real failure still shows through the exit code.
+MSBUILD_ERROR = re.compile(r"\b(?:error|fatal)\b\s*:?\s*[A-Z]+\d{3,}\s*:", re.I)
 
 
 def read(path):
@@ -30,6 +35,8 @@ def read(path):
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     log, baseline, rc = sys.argv[1], sys.argv[2], int(sys.argv[3])
     save_baseline = len(sys.argv) > 4 and sys.argv[4].lower() == "baseline"
     lines = read(log)
@@ -39,8 +46,10 @@ def main():
         m = DELPHI.match(s.strip())
         if m:
             (errors if m["code"][0] in "EF" else warnings).append(m)
-        elif MSBUILD.search(s) and not MSBUILD_WARNING.search(s):
+        elif MSBUILD_ERROR.search(s):
             errors.append(s.strip())
+    if rc != 0 and not errors:
+        errors.append("build failed (msbuild exit code %d) but no error line was recognised; read %s" % (rc, log))
 
     key = lambda m: f'{m["file"].lower()}\t{m["code"]}\t{m["msg"]}'
     now = Counter(key(m) for m in warnings)
@@ -51,6 +60,9 @@ def main():
         print("ERROR:", e if isinstance(e, str) else f'{e["file"]}({e["line"]}) {e["code"]}: {e["msg"]}')
 
     if save_baseline:
+        if errors:
+            print("baseline NOT saved: the build has errors (a failed build has no warnings to compare with)")
+            return
         with open(baseline, "w", encoding="utf-8") as f:
             for k, n in sorted(now.items()):
                 f.write(f"{n}\t{k}\n")
@@ -60,8 +72,9 @@ def main():
     try:
         old = Counter()
         for s in read(baseline):
-            n, k = s.split("\t", 1)
-            old[k] = int(n)
+            n, tab, k = s.partition("\t")
+            if tab and n.isdigit():
+                old[k] = int(n)                 # blank or foreign lines are skipped
     except FileNotFoundError:
         print("no baseline: run 'build.bat baseline' first")
         return

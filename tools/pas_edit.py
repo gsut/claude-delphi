@@ -107,6 +107,9 @@ def main():
                 found = pascal_lex.find_routine(pascal_lex.routines(text), ed["routine"])
             except pascal_lex.ParseError as e:
                 refuse("edit %d: cannot parse %s: %s" % (n, path, e))
+            # a forward / external declaration has no body to edit: only routines with a body count
+            with_body = [r for r in found if r.body_start is not None]
+            found = with_body if with_body else found
             if len(found) != 1:
                 where = ", ".join("%s (line %d)" % (r.path(), r.line) for r in found) or "none"
                 refuse("edit %d: routine '%s' matches %d routines: %s" % (n, ed["routine"], len(found), where))

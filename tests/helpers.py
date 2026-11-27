@@ -109,10 +109,17 @@ class TempProject:
         shutil.rmtree(self.dir, ignore_errors=True)
 
 
-def run_hook(name, payload, project):
-    r = subprocess.run([sys.executable, "-I", os.path.join(HOOKS, name)], input=json.dumps(payload),
-                       capture_output=True, text=True, encoding="utf-8", env=project.env(), cwd=project.dir)
-    return json.loads(r.stdout) if r.stdout.strip() else None
+def run_hook(name, payload, project, raw=None):
+    """Runs a hook the way Claude Code does: JSON on stdin as raw UTF-8 (non-ASCII characters not escaped). A hook that
+    crashes or writes to stderr fails the test: a silent crash must never pass as "silent = allowed"."""
+    data = raw if raw is not None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    r = subprocess.run([sys.executable, "-I", os.path.join(HOOKS, name)], input=data, capture_output=True,
+                       env=project.env(), cwd=project.dir)
+    if r.returncode != 0 or r.stderr.strip():
+        raise AssertionError("hook %s failed: exit %d, stderr: %s" % (name, r.returncode,
+                                                                     r.stderr.decode("utf-8", "replace")))
+    out = r.stdout.decode("utf-8")
+    return json.loads(out) if out.strip() else None
 
 
 def run_tool(path, args, project=None):

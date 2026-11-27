@@ -46,6 +46,10 @@ Look at the database read-only for a sample record; confirm that the branch's in
 If the report says "since <date>", first list **your own** changes in that range (`git log --since … -- <file>`), then
 other people's. If the logs have a counter for that behaviour, count it day by day.
 
+If the new request turns out to be caused by an earlier job that has a review log (`<id>-reviews.md` next to its plan),
+add an `after-close-out` row to that log (agent `developer`, Findings = problems that job caused, found after its
+commit), and tell the developer.
+
 ## 6. Hypothesis
 
 Write it in this form and stop:
@@ -62,6 +66,19 @@ Write it in this form and stop:
   or put under a condition: what else the old call did (mistake log [20]); once approved, this table goes into the plan file.
 - **Questions:** only those the code and data cannot answer. The team's terms and business rules are asked, not guessed;
   but before writing a question, list what the old code does today and who reads the field.
+
+## 7. After approval: the plan file
+
+When the developer approves the fix (after the measurement, for a bug), write the plan file from
+`.claude/templates/plan.md` to the plans folder named in `CLAUDE.md` (`<personal folder>/plans/<id>-plan.md`), before any
+code. Keep the `<!-- plan:... -->` markers; headings and text in the developer's language.
+- **Plan items** and **Scope** hold only what will be changed: the close-out change map
+  (`tools/diff_routines.py --plan`) reads these two sections alone. Callers that stay as they are go into "Other callers".
+- The [20] table, the commit point: a row each, or "none" — an empty section is not "none".
+- If the plan changes later (review, new finding), update the file and the status line; the change needs approval again.
+- If a file this job will touch still has uncommitted changes of another job, ask the developer to commit that job
+  first: the change map and the close-out audit compare with HEAD and would mix the two jobs (or note the commit to use
+  as `--base` / `--rev`).
 
 ## Do not
 

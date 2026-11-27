@@ -29,7 +29,7 @@ Araç bütün ikili DFM'leri listeler, varsa 1 ile çıkar. Başka bir şeye ge�
 > **Text DFM**, kaydedin; ya da Delphi'nin komut satırı çeviricisi `bin\convert.exe -i -t <dosya.dfm>` (sürümünüzün
 seçeneklerini görmek için `convert.exe`'yi argümansız çalıştırın). Araç hiçbir dosyayı değiştirmez.
 
-Kurulumdan sonra paket izlemeye devam eder: SessionStart hook'u (`session_check.py`) her oturum başında yeni bir ikili DFM
+Kurulumdan sonra paket izlemeye devam eder: SessionStart hook'u (`session_check.py`) her yeni oturumun başında (devam ettirilen oturumda değil) yeni bir ikili DFM
 belirdiyse Claude'a söyler, Claude da ilk cevabında size bildirir; `pas_edit.py` ikili DFM'yi düzenlemeyi reddeder;
 `pascal_check.py` değişen dosyalar arasında ikili DFM görürse bildirir.
 
@@ -37,13 +37,20 @@ belirdiyse Claude'a söyler, Claude da ilk cevabında size bildirir; `pas_edit.p
 
 Aşağıdaki yollar proje köküne göredir (`.dpr`'nin bulunduğu dizin; bir Git deposu olmalı).
 
-1. `hooks/*.py` → projenizin `.claude/hooks/` dizinine; `tools/` → projede bir `tools/` dizinine (`pas_edit.py`,
-   `pas_callers.py`, `diff_routines.py`, `dfm_text_check.py` ve `pascal_lex.py` birlikte durmalı; hook mesajları
-   `tools/pas_edit.py` ve `tools/dfm_text_check.py`'yi gösterir).
+1. `hooks/*.py`'nin **tamamı** → projenizin `.claude/hooks/` dizinine (hook'lar `hook_common.py`'yi kendi dizinlerinden içe
+   aktarır); `tools/` dizininin **tamamı** → projede bir `tools/` dizinine. Araçlar birbirini içe aktarır:
+   `pas_edit` → `pascal_lex`, `dfm_text_check`; `pas_callers` → `pascal_lex`, `dfm_text_check`; `diff_routines` → `pascal_lex`;
+   `closeout_check` → `diff_routines`. Tek dosya kopyalamak diğerlerini `ModuleNotFoundError` ile bozar; tek tek
+   güncellenen kopyalar da birbirinden kopar: güncellerken dizinin tamamını yeniden kopyalayın. Hook mesajları
+   `tools/pas_edit.py` ve `tools/dfm_text_check.py`'yi gösterir.
 2. `examples/settings.json` → `.claude/settings.json` (varsa birleştirin). Üç hook'u bağlar: `session_check.py`
-   (SessionStart), `command_guard.py` (PreToolUse) ve `pascal_check.py` (PostToolUse). `python` yolda olmalı.
+   (SessionStart), `command_guard.py` (PreToolUse, Bash ve PowerShell) ve `pascal_check.py` (Write / Edit'te PreToolUse ile
+   dosyanın anlık görüntüsü, PostToolUse ile rapor). Claude Code'un **PowerShell** aracını da kapatır: `Bash(...)` yasak
+   kuralları (git, gh) ona uygulanmaz, Windows'ta onları atlatırdı. O kuralı kaldırırsanız diye hook'lar PowerShell
+   komutlarını da denetler. `python` yolda olmalı.
 3. `examples/claude-delphi.json` → `.claude/claude-delphi.json`; aşağıdaki tabloya ve *Yerelleştirme* bölümüne göre düzenleyin.
-4. `.claude/skills/` ve `.claude/agents/` → projenizin `.claude/` dizinine.
+4. `.claude/skills/`, `.claude/agents/` ve `.claude/templates/` (plan dosyası ve inceleme kaydı şablonları) → projenizin
+   `.claude/` dizinine.
 5. `build/` → proje kökünde `build\` olarak (derleme skill'i `build\build.bat`'ı çağırır; varsayılan olarak
    `..\Project.dproj`'u derler). `build.bat`'ta (ya da ortam değişkeniyle) `DELPHI_RSVARS`, `DELPHI_DPROJ`, `DELPHI_CONFIG`,
    `DELPHI_PLATFORM`. `.bat` dosyası CRLF kalmalı. İlk çalıştırma: `build.bat baseline`.
@@ -65,9 +72,17 @@ Aşağıdaki yollar proje köküne göredir (`.dpr`'nin bulunduğu dizin; bir Gi
 10. Claude'a salt okunur bir veritabanı kullanıcısı verin (`examples/readonly-user.postgresql.sql`; diğer veritabanları
     *Veritabanları* bölümünde) ve yazma yetkili kullanıcıları `write_db_users`'a yazın.
 11. Yeni bir Claude Code oturumu açıp hook'ları deneyin: Claude'dan `sed -i "s/a/b/" <bir birim>.pas` çalıştırmasını isteyin —
-    reddedilmeli.
+    reddedilmeli. Sonra `scope-counter` ajanını "`echo $(git log --oneline -1)` komutunu bir kez çalıştır, çıktıyı ya da
+    hatayı aynen bildir" göreviyle başlatmasını isteyin. Ajan hook'un reddini bildirmeli ("Read-only agent
+    'scope-counter': command substitution ..."); aynı komutu Claude kendisi çalıştırınca geçmeli. Yalnız okuyan bir komut
+    kullanın: ajanın kendi talimatı yazmayı yasakladığı için `touch` ile hook'a hiç sorulmadan reddeder ve test bir şey
+    kanıtlamaz. Ajan commit satırını yazdırırsa Claude Code sürümünüz hook'lara `agent_type` göndermiyordur
+    (2.1.332'de geldiği ölçüldü); o zaman yalnız skill'lerdeki `git status` / plan özeti kontrolü kalır. Windows'ta son
+    olarak Claude'dan PowerShell aracıyla `Get-Date` çalıştırmasını isteyin: yasak kuralı reddetmeli (PowerShell'e izin
+    verdiyseniz bunun yerine `'x' | Set-Content probe.pas` isteyin: hook reddetmeli). Bu testleri Claude Code ya da Python
+    güncellendikten, `.claude/settings.json` ya da `.claude/claude-delphi.json` düzenlendikten sonra tekrarlayın.
 
-`pas_edit.py` ve `diff_routines.py` `.claude/claude-delphi.json`'ı `$CLAUDE_PROJECT_DIR`'dan, yoksa bulunduğu dizinden
+`pas_edit.py`, `diff_routines.py` ve `closeout_check.py` `.claude/claude-delphi.json`'ı `$CLAUDE_PROJECT_DIR`'dan, yoksa bulunduğu dizinden
 yukarı çıkarak bulur; `pas_callers.py`, DFM araçları ve `dfm_text_check.py` `--root` alır (varsayılan: bulunulan dizin), onları
 proje kökünden çalıştırın.
 
@@ -78,9 +93,12 @@ proje kökünden çalıştırın.
 | `scripts_dir` | tek kullanımlık betiklerin yazıldığı (Write) ve yoluyla çalıştırıldığı dizin; gömülü Python yerine |
 | `forbidden_patterns` | değişen Pascal dosyasına eklendiğinde bildirilen projeye özgü desenler, ör. `{"pattern": "BoolToStr\\s*\\([^)]*,\\s*True\\s*\\)", "message": "use BoolToStr(x)"}`; varsayılan boş |
 | `signature_pattern`, `date_format` | yorum imzası denetimi (*Yerelleştirme*); desen boşsa kapalı |
-| `measure_marker`, `dead_code_marker` | skill'lerin ve `CLAUDE.md`'nizin kullandığı işaretler; hook'lar okumaz |
+| `measure_marker` | geçici ölçüm satırlarının işareti; `/triage` ve `closeout_check.py` okur (kalan satırları bildirir); hook'lar okumaz |
+| `dead_code_marker` | `CLAUDE.md`'nizde anılan ölü kod işareti; yalnız Claude ve ekip için bir kural — hiçbir skill, hook ya da araç okumaz |
 | `forbid_inline_python`, `forbid_gh_write` | gömülü Python ve GitHub CLI yazma kurallarını kapatır (varsayılan açık) |
 | `warn_binary_dfm` | SessionStart'taki ikili DFM uyarısı (varsayılan açık) |
+| `build_log` | `build.bat`'ın yazdığı günlük, proje köküne göre (varsayılan `build/log/last.log`); `closeout_check.py` son değişiklikten yeni olduğunu denetler |
+| `readonly_agents` | Bash komutlarına `command_guard.py` 6. kuralı uygulanan alt ajanlar (komut ikamesi, yönlendirme, yazan program ve seçenek yok; bir tetik teli, güvenlik sınırı değil); varsayılan üç inceleme ajanı. `.claude/agents/` içindeki adlarla aynı tutun (bir test denetler) |
 
 ## Testler
 
@@ -103,7 +121,7 @@ metin değil, yapılandırmadır:
 | Cevap ve raporların dili | `CLAUDE.md`'de tek satır: "Communicate with the developer in Turkish." |
 | Kaynak kod sayfası | `claude-delphi.json` → `source_encoding`: `cp1254` (Türkçe), `cp1252`, `cp1250`, `cp1251` ... — tek baytlı kod sayfaları; çok baytlılar (ör. `cp932` Japonca) denenmedi, `pas_callers.py` tek bayt varsayar |
 | Yorum imzasındaki tarih biçimi | `date_format` (strftime, ör. `%d.%m.%Y`) ve `signature_pattern` (`{date}` yer tutucusu; boş = denetim kapalı) |
-| Koddaki işaretler | `measure_marker` (varsayılan `X-MEASURE`), `dead_code_marker` (varsayılan `DEAD-CODE`); skill'ler okur ve `CLAUDE.md`'nizde anılır, hook'lar okumaz; Türkçe ekip `X-OLCUM` / `OLU-KOD` seçebilir |
+| Koddaki işaretler | `measure_marker` (varsayılan `X-MEASURE`; `/triage` ve `closeout_check.py` okur), `dead_code_marker` (varsayılan `DEAD-CODE`; yalnız `CLAUDE.md`'nizde anılır); Türkçe ekip `X-OLCUM` / `OLU-KOD` seçebilir. Kodda gerçekten kullanılanı yazın: koddan farklı bir işaret `closeout_check.py`'nin kalan satırları kaçırmasına yol açar |
 | Yerelleştirilmiş derleyici / MSBuild çıktısı | bir şey yapmaya gerek yok: `build/summary.py` mesajı koddan (`E`, `F`, `W`, `H`, `MSB`) sınıflar; IDE dili değişince yeni taban alınır |
 | DFM'deki ASCII dışı karakterler | metin DFM'ler bunları ayarlı kod sayfasının `#nnn` kaçışlarıyla saklar; araçlar DFM'yi Latin-1 okur ve yalnız ASCII özellik adlarını karşılaştırır; `pas_edit.py` DFM'ye ASCII dışı karakter yazmayı reddeder |
 
@@ -139,6 +157,51 @@ Veritabanı hangisi olursa olsun Claude'a **salt okunur bir kullanıcı** verin,
 - `pascal_check.py` bütünüyle UTF-8 kaydedilmiş dosyayı yakalar; ANSI dosyaya eklenmiş birkaç UTF-8 satırı yakalamaz.
 - `pas_edit.py` uygulanmış spec'i hatırlamaz: aynı "yalnız ekleme" spec'i iki kez uygulanırsa satırlar iki kez eklenir.
 - `pascal_check.py`'nin yerleşik `date_format` varsayılanı `%d.%m.%Y`, örnek ayarlar `%Y-%m-%d` kullanır; açıkça verin.
+
+**Güvenlik parçalarının kapsamadıkları** (bağımsız bir incelemeden; bulunup düzeltilebilen düzeltildi):
+- `command_guard.py` komut metnine uygulanan desenlerdir — yalnız inceleme ajanları için değil, ana oturum için de
+  alışkanlığa karşı bir tetik teli. Yakalamadıkları: kendi başına yazan programlar (`cp`, `mv`, `dos2unix`, `iconv -o`,
+  `git checkout -- dosya`, bir betik dosyası), iç içe kabuk (`cmd /c "..."`, `powershell -Command`), başka
+  yorumlayıcıların satır içi kodu, değişkende tutulan hedefler.
+- Veritabanı kuralı kullanıcı adını ancak komutta yazılıysa görür. Örtük kimlikle bağlantılar (Windows kimlik doğrulaması
+  `sqlcmd -E`, işletim sistemi kullanıcı adı, önceden ayarlanmış `PGUSER`, `.pgpass`, servis dosyası, betik içindeki
+  bağlantı dizesi) geçer; SQL metni hiç incelenmez. Sınır, salt okunur veritabanı kullanıcısı ve yazma kimliği taşımayan
+  bir ortamdır.
+- `python` yolda değilse ya da hook zaman aşımına uğrarsa Claude Code komutu denetimsiz çalıştırabilir (burada
+  doğrulanmadı). Python ya da Claude Code güncellendikten sonra 11. adımdaki duman testlerini tekrarlayın.
+- `pascal_check.py` yazmadan sonra bildirir (PostToolUse); yazmayı önlemez. Bash komutundan sonra `git status`'un
+  listelediği ve son 10 dakikada değişmiş Pascal dosyalarını görür: yok sayılan dosyalar, depo dışındaki dosyalar ve
+  zaman damgası korunmuş dosyalar denetlenmez. LF saklayan ve hiçbir dönüşüm yapmayan bir depoda commit'teki hâl CRLF
+  sayılır; çalışma kopyası LF olan bir dosya Bash'ten sonra bütünüyle bildirilir (Write / Edit dosyanın hemen önceki
+  hâliyle karşılaştırır).
+- "Git salt okunur", `settings.json`'da Bash aracı için yasaklanan komut önekleri listesidir, bir mekanizma değil:
+  listede olmayan alt komutlar reddedilmez.
+- İnceleme ajanları Write / Edit kullanamaz (`tools` satırı, bir test denetler). Bash komutlarını 6. kural ancak Claude Code
+  hook'lara `agent_type` gönderdikçe sınırlar (2.1.332'de görüldü; belgelenmiş bir güvence değil — duman testi gösterir)
+  ve 6. kural bir veritabanı istemcisini durdurmaz: salt okunur kullanıcı durdurur.
+- Skill'ler talimattır. Tur sınırları, "denetim sürerken dosya değişmez", ajanlara söylenenler ve inceleme kaydındaki
+  sayılar modelin onlara uymasına bağlıdır. `closeout_check.py` inceleme kaydının biçimini ve bugün tarihli bir kapanış
+  satırını (gece yarısından sonra kapanan iş yeni satır ister), derleme günlüğünün kaynaklardan yeni olduğunu denetler —
+  denetimin yapıldığını ya da derlemenin başarılı olduğunu değil.
+
+**Araçların görmedikleri:**
+- `pascal_lex.py` bir çözümleyici değildir: include dosyaları açılmaz, yordam sınırlarını yalnız ilk `{$IF}` dalı verir,
+  yordam içindeki yerel tipler derinlik sayımıyla atlanır, çok satırlı `'''` dizgileri ve gövdesi include dosyasındaki
+  yordam ParseError verir.
+- `pas_callers.py` adla, tip bilgisi olmadan, `--root` ve `.dpr` birimlerinde arar; başka projeler, paketler ve kök
+  dışındaki arama yolu aranmaz. Ayırt edemediğini bildiği durumda "dead" yerine "NO VERDICT" verir (aracın yardımına
+  bakın); "dead" hükmü yine de denetlenecek bir kanıttır, ispat değil.
+- `diff_routines.py --plan` yordamlara ve DFM nesnelerine plan durumu verir. Birim düzeyindeki değişiklikler (uses,
+  sabitler, tipler, sınıf bildirimleri) ve Pascal dışı dosyalar (`.sql`, `.dproj`, `.rc`) durum almaz; onları yalnız
+  Kapsam listesi ("adı geçen ama değişmeyen") ve kapanış ajanı kapsar.
+- `dfm_field_check.py` yalnız DataSource'unu kalıcı alanlı bir veri kümesine çözebildiği bağları denetler ve kaçını
+  atladığını söyler: 700 birimlik gerçek bir projede 2.419 denetlenene karşı 1.716 bağlı kontrol atlandı.
+- Depo kökü başına tek proje varsayılır (tek `.dpr`, tek `.dproj`, kaynaklar kök altında). `build.bat` tek `.dproj`
+  derler; proje grupları ve paket çıktı dizinleri (`.bpl` / `.dcp`) yönlendirilmez (bir pakette doğrulanmadı).
+- Kaynak kod sayfası: bütün proje için tek bir tek baytlık kod sayfası ya da UTF-8. Karışık projeler, UTF-16 kaynaklar ve
+  çok baytlı ANSI sayfaları (ör. cp932; ikinci bayt `{` ya da `}` olabilir) lexer ve araçlarca desteklenmez.
+- SessionStart denetimi yalnız yeni oturumda çalışır (devam ettirilende değil) ve yalnız `.dfm`'ye bakar; ikili `.fmx` /
+  `.lfm`'ye bakmaz.
 
 ## Katkı ve lisans
 

@@ -87,7 +87,9 @@ chain in the DFM (form → tab → panel), its `Caption` **and** its `Visible`. 
 *Check:* for every button / menu that calls the changed routine, read the `Visible` / `Enabled` assignments; state the
 meaning of condition flags from where they are assigned, not from their names (`grep -n "<Flag> *:="`). "Same output" is
 accepted only after showing that the changed line runs for that record. If nothing sets the triggering flag, write the
-path down as "unreachable".
+path down as "unreachable". When a change opens a new write path (an editable cell, a menu or window that writes data),
+the table gets a row for the project's read-only / protected modes: what happens on that path, and does the
+neighbouring screen's protection apply the same rule?
 
 ### Scope and generalisation
 
@@ -147,6 +149,10 @@ filled") is also enforced in code (`LIMIT 1`, a constraint, a condition).
 - A cell lock given in a grid's `OnGetCellParams` (`Params.ReadOnly`) must also be given when `EditMode = True`: EhLib asks
   for edit permission exactly that way (`TAxisBarEh.CanModify`). `if EditMode then Exit` is only for colour and text. Add
   "double-click a locked cell and try to type" to the test steps.
+- When you clear or change a component property, or wire an event, check in the component source whether the part's
+  visibility depends on that property (an EhLib column's `EditButton` without an explicit `Visible` is shown only if the
+  column has a drop-down form, `DefaultVisible`). A button you wired goes into the test instructions only after you saw
+  it on screen.
 
 **[17] Two traps the compiler catches.** Delphi `{ }` comments do not nest (a comment containing `{` uses `//`); an
 anonymous method cannot capture a nested routine, a `var` / `out` parameter or `Result` (E2555). Details:

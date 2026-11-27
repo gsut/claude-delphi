@@ -51,3 +51,11 @@ For each finding:
 
 Write in order of severity. "Not verified" items at the end as a separate list. If you have no findings, write
 "no findings"; do not add weak findings to fill space.
+
+End with an **index** of the findings above (not of the "not verified" list), one row each, in the same order:
+
+| # | Severity | file:line | Finding in one line |
+|---|---|---|---|
+
+Severity is exactly `critical`, `medium` or `minor`. One line per cell; a `|` inside a cell is written `\|`. The index
+only points at the findings: the evidence, scenario and proposal stay in the body, in full. No findings → no index.

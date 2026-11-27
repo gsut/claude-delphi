@@ -1,7 +1,7 @@
 """Lists the DFM controls bound to the given field names (DataField / FieldName), with the DataSource of the same object.
 Answers "is this field shown anywhere on screen?" - use it next to a Pascal search when proving a field or code is dead.
 
-Usage:   python dfm_field_usage.py --root <project dir> <DataSource regex> <field1> [field2 ...]
+Usage:   python dfm_field_usage.py --root <project dir> [--exclude <regex>] <DataSource regex> <field1> [field2 ...]
 Example: python dfm_field_usage.py --root . "DmMain\\.DsCustomer$" Name OldCode
 Positive control: also pass a field you know is bound on screen; if it is not listed, the pattern is wrong.
 """
@@ -11,7 +11,7 @@ import re
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--root", default=os.getcwd())
-ap.add_argument("--exclude", default=r"__history|__recovery", help="regex of folders to skip")
+ap.add_argument("--exclude", default=r"__history|__recovery|[\\/]backup[\\/]", help="regex of folders to skip")
 ap.add_argument("datasource")
 ap.add_argument("fields", nargs="+")
 arg = ap.parse_args()

@@ -11,5 +11,7 @@
   "measure_marker": "X-MEASURE",
   "dead_code_marker": "DEAD-CODE",
   "warn_binary_dfm": true,
+  "build_log": "build/log/last.log",
+  "readonly_agents": ["scope-counter", "devils-advocate", "closeout-auditor"],
   "forbidden_patterns": []
 }
